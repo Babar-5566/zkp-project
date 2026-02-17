@@ -2,23 +2,23 @@ Starting on 14.2.26
 
 # Some Questions 
 ```bash
-## How ZKP handles privacy vs trust tradeoff
+Q How ZKP handles privacy vs trust tradeoff
 ```
 ```bash
-## Why not just use database login?
+Q Why not just use database login?
 ```
 ```bash
-## Why ZKP is called “trust minimization”
+Q Why ZKP is called “trust minimization”
 ```
 ```bash
-## How decentralized identity works
+Q How decentralized identity works
 ```
 ```bash
-## Real attacks ZKP prevents
+Q Real attacks ZKP prevents
 ```
 ```bash
-## How to justify your architecture
+Q How to justify your architecture
 ```
 ```bash
-## How to justify your architecture
+Q How to justify your architecture
 ```
