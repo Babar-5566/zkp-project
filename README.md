@@ -29,9 +29,10 @@ Starting on 14.2.26
 
 # Types of predicate :-
 ```bash
+
   "Aadhaar": {
-    "fullName": ["existence", "equality"],
-    "dob": ["existence", "numeric/range", "date comparison"],
+    "fullName": ["existence", "equality", "cross-field"],
+    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
     "gender": ["existence", "equality", "set membership"],
     "address": ["existence", "string match"],
     "photoVerified": ["existence", "boolean"],
@@ -39,39 +40,39 @@ Starting on 14.2.26
     "issuer": ["existence", "equality"]
   },
   "PAN": {
-    "fullName": ["existence", "equality"],
+    "fullName": ["existence", "equality", "cross-field"],
     "guardianName": ["existence", "equality"],
-    "dob": ["existence", "numeric/range", "date comparison"],
+    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
     "panID": ["existence", "equality"],
     "issuer": ["existence", "equality"]
   },
   "Passport": {
-    "fullName": ["existence", "equality"],
-    "dob": ["existence", "numeric/range", "date comparison"],
+    "fullName": ["existence", "equality", "cross-field"],
+    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
     "passportID": ["existence", "equality"],
     "nationality": ["existence", "equality", "set membership"],
     "expiryDate": ["existence", "date comparison"],
     "issuer": ["existence", "equality"]
   },
   "DrivingLicense": {
-    "fullName": ["existence", "equality"],
-    "dob": ["existence", "numeric/range", "date comparison"],
+    "fullName": ["existence", "equality", "cross-field"],
+    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
     "licenseID": ["existence", "equality"],
     "issueDate": ["existence", "date comparison"],
     "expiryDate": ["existence", "date comparison"],
     "issuer": ["existence", "equality"]
   },
   "BirthCertificate": {
-    "fullName": ["existence", "equality"],
-    "dob": ["existence", "numeric/range", "date comparison"],
+    "fullName": ["existence", "equality", "cross-field"],
+    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
     "placeOfBirth": ["existence", "equality", "string match"],
     "fatherName": ["existence", "equality"],
     "motherName": ["existence", "equality"],
     "issuer": ["existence", "equality"]
   },
   "12thMarksheet": {
-    "fullName": ["existence", "equality"],
-    "dob": ["existence", "numeric/range", "date comparison"],
+    "fullName": ["existence", "equality", "cross-field"],
+    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
     "school": ["existence", "equality", "string match"],
     "board": ["existence", "equality", "string match"],
     "marks": ["existence", "numeric/range"],
@@ -79,16 +80,16 @@ Starting on 14.2.26
     "issuer": ["existence", "equality"]
   },
   "12thAdmit": {
-    "fullName": ["existence", "equality"],
-    "dob": ["existence", "numeric/range", "date comparison"],
+    "fullName": ["existence", "equality", "cross-field"],
+    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
     "school": ["existence", "equality", "string match"],
     "board": ["existence", "equality", "string match"],
     "rollNumber": ["existence", "equality"],
     "issuer": ["existence", "equality"]
   },
   "10thMarksheet": {
-    "fullName": ["existence", "equality"],
-    "dob": ["existence", "numeric/range", "date comparison"],
+    "fullName": ["existence", "equality", "cross-field"],
+    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
     "school": ["existence", "equality", "string match"],
     "board": ["existence", "equality", "string match"],
     "marks": ["existence", "numeric/range"],
@@ -96,13 +97,14 @@ Starting on 14.2.26
     "issuer": ["existence", "equality"]
   },
   "10thAdmit": {
-    "fullName": ["existence", "equality"],
-    "dob": ["existence", "numeric/range", "date comparison"],
+    "fullName": ["existence", "equality", "cross-field"],
+    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
     "school": ["existence", "equality", "string match"],
     "board": ["existence", "equality", "string match"],
     "rollNumber": ["existence", "equality"],
     "issuer": ["existence", "equality"]
   }
+
 ```
 
 # FINAL PROOF REQUEST SCHEMA
