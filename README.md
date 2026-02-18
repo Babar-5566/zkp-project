@@ -107,6 +107,17 @@ Starting on 14.2.26
 
 ```
 
+## Predicate → Recommended Proof System
+```bash
+Existence → BBS+ only
+Equality → zk-SNARK or BBS+
+Cross-field → zk-SNARK
+Range → zk-SNARK only
+String match → BBS+ preferred
+Hash → BBS+ preferred
+Selective disclosure → BBS+ only
+```
+
 # FINAL PROOF REQUEST SCHEMA
 ```bash
 (Verifier → Wallet)
