@@ -1,6 +1,6 @@
 Starting on 14.2.26
 # 19.2.26
-- follow DID + VC format (create a button to show the cred in that format and allow the user to download the .json file which contains the proof in that format)
+- follow DID + VC format (Do not change the working of the system, just create a function that converts the object or cred structure we use to the standard structure of storing creds. Create a button to show the cred in that format and allow the user to download the .json file which contains the proof in that format)
 - two verifiers should not able to track or link a proof (or user).
 - revocaion handling (used accumalator way to solve this)
 # Cuurent Schema for different certificates :-
