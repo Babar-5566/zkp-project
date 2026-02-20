@@ -40,6 +40,15 @@ const Issuer = () => {
     if (['panID', 'passportID', 'licenseID', 'rollNumber'].includes(name)) finalValue = value.toUpperCase();
     if (name === 'aadhaarNumber') finalValue = value.replace(/\D/g, '').slice(0, 12); // Limit to 12
 
+    // --- Custom-date field formatting ---
+    if (name === 'dob') {
+      // Remove non-digit characters
+      let digits = value.replace(/\D/g, '').slice(0, 8); // Max 8 digits: DDMMYYYY
+      if (digits.length >= 3) digits = digits.slice(0, 2) + '/' + digits.slice(2);
+      if (digits.length >= 6) digits = digits.slice(0, 5) + '/' + digits.slice(5, 9);
+      finalValue = digits;
+    }
+
     setFormData(prev => ({ ...prev, [name]: finalValue }));
 
     // Remove error when user types
@@ -209,8 +218,8 @@ const Issuer = () => {
                         }
                       }}
                       className={`w-full text-left px-4 py-2 text-sm flex justify-between items-center ${issued
-                          ? "text-slate-500 cursor-not-allowed"
-                          : "text-slate-300 hover:bg-slate-700"
+                        ? "text-slate-500 cursor-not-allowed"
+                        : "text-slate-300 hover:bg-slate-700"
                         }`}
                     >
                       <span>{type}</span>
