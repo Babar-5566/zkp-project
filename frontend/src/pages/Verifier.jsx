@@ -178,12 +178,31 @@ const Verifier = () => {
 
         {/* STEP 1: SELECT */}
         {step === 1 && (
-          <motion.div key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
+          <motion.div
+            key="step1"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-3"
+          >
             {credentials.map((card) => (
-              <div key={card.id} onClick={() => { setSelectedCard(card); setStep(2); }} className="bg-[#0B101B] border border-slate-800 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:border-cyan-500/30">
+              <div
+                key={card.id}
+                onClick={() => { setSelectedCard(card); setStep(2); }}
+                className="bg-[#0B101B] border border-slate-800 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:border-cyan-500/30"
+              >
                 <div className="flex items-center gap-3">
-                  <div className="bg-slate-900 p-2 rounded text-cyan-400"><Fingerprint size={18} /></div>
-                  <h4 className="text-white font-bold text-sm">{card.idType}</h4>
+                  <div className="bg-slate-900 p-2 rounded text-cyan-400">
+                    <Fingerprint size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold text-sm">
+                      {card.credentialSubject?.idType || "Unknown Document"}
+                    </h4>
+                    <p className="text-slate-400 text-xs">
+                      {card.credentialSubject?.fullName || "No Name"} • Issued: {new Date(card.issuanceDate).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
                 <ChevronRight size={16} className="text-slate-600" />
               </div>
@@ -216,13 +235,15 @@ const Verifier = () => {
               <h3 className="text-white font-black mb-6">Select Predicates for Each Field</h3>
 
               <div className="space-y-4 mb-8">
-                {getFieldsByIdType(selectedCard.idType).map((field) => (
+                {getFieldsByIdType(selectedCard.credentialSubject?.idType).map((field) => (
                   <div key={field.name} className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         {field.icon && <field.icon size={16} className="text-cyan-400" />}
                         <span className="text-[10px] font-bold text-slate-300 uppercase">{field.label}</span>
                       </div>
+                      {/* Optional: show current value */}
+                      <span className="text-[9px] text-slate-400">{selectedCard.credentialSubject?.[field.name]}</span>
                     </div>
 
                     {/* Predicates buttons */}
