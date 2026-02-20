@@ -284,7 +284,6 @@ const Verifier = () => {
         )}
 
 
-
         {/* STEP 3: TERMINAL */}
         {step === 3 && (
           <motion.div key="step3" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>

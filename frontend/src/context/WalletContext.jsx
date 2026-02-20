@@ -147,8 +147,12 @@ export const WalletProvider = ({ children }) => {
   };
 
   const clearAllData = () => {
-    setCredentials([]);
-    addLog("Purged all vault data.");
+    setCredentials(prev => {
+      const count = prev.length;       // count of deleted credentials
+      saveCredentials([]);             // persist empty state
+      addLog(`Purged all vault data. Deleted ${count} credential(s).`);
+      return [];
+    });
   };
 
   return (
