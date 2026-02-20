@@ -130,6 +130,46 @@ Selective disclosure → BBS+ only
 ```bash
 (Verifier → Wallet)
 {
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1"
+  ],
+  "id": "urn:uuid:78f05520-25c8-4679-afad-d2f98b2d4ab2",
+  "type": [
+    "VerifiableCredential",
+    "AadhaarCardCredential"
+  ],
+  "issuer": "did:example:gov-india",
+  "issuanceDate": "2026-02-20T08:44:25.526Z",
+  "credentialSubject": {
+    "id": "did:example:703719d7-ce1d-4882-8f96-59df97daf82a",
+    "idType": "Aadhaar Card",
+    "fullName": "htrbd",
+    "aadhaarNumber": "241414131241",
+    "dob": "07/02/2026",
+    "gender": "Other",
+    "address": "25234526webrvg",
+    "photoVerified": "No",
+    "issuer": "Govt. of India"
+  },
+  "credentialStatus": {
+    "id": "https://example.com/status/3",
+    "type": "AccumulatorStatus",
+    "accumulatorId": "revocation-list-1",
+    "index": 3
+  },
+  "proof": {
+    "type": "BbsBlsSignature2020",
+    "created": "2026-02-20T08:44:25.526Z",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "did:example:gov-india#key-1",
+    "signature": "roGEQIUg6TjfxnkHJxbKUik4ZIYMyrE3Ukdx9bnv5DI1lHb//+w4wLgCR14+vuwbMKVg9X44OT7IyqxonIH7xLuNJjBkG7KYma9urLMBCo4x5JoTWPaG1p7URXapIpy1ng+avITVXJin9XQoxPxyNA=="
+  },
+  "publicKey": "txyTIDnBfboTY/b/ADO1++12ACwcYWWuJNG/jDAQVd3mwz1zgE0b/QmLmUiWOb0NAxNZMHUU53BDiM/+t5H/56lIF6y5woIvhY1CmL4nWJ455WDLLJG21zbVzsjFiLH2"
+}
+```
+```bash
+(Verifier → Wallet)
+{
   "request_id": "string",
   "credential_type": "string",
 
