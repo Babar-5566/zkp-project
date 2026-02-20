@@ -35,6 +35,7 @@ export const ID_TYPES = [
 ];
 
 const getToday = () => new Date().toISOString().split('T')[0];
+const getCurrentYear = () => new Date().getFullYear();
 
 export const getFieldsByIdType = (idType) => {
   const commonAuth = [
@@ -124,7 +125,7 @@ export const getFieldsByIdType = (idType) => {
         { name: 'fullName', label: 'Student Name', type: 'text', icon: User, required: true, predicates: ['existence', 'equality', 'cross-field'] },
         { name: 'university', label: 'University Name', type: 'custom-uni', icon: GraduationCap, placeholder: 'Select University', required: true, predicates: ['existence', 'string match', 'equality'] },
         { name: 'rollNumber', label: 'Registration / Roll No', type: 'text', icon: UserCheck, required: true, simulateVerify: true, predicates: ['existence', 'equality', 'hash'] },
-        { name: 'passingYear', label: 'Year of Passing', type: 'custom-year', icon: Calendar, required: true, predicates: ['existence', 'numeric/range', 'cross-field'] },
+        { name: 'passingYear', label: 'Year of Passing', type: 'custom-year', icon: Calendar, required: true, defaultValue: getCurrentYear, predicates: ['existence', 'numeric/range', 'cross-field'] },
         ...commonAuth
       ];
 

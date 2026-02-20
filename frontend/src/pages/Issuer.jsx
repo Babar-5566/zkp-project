@@ -6,12 +6,14 @@ import {
 } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { getFieldsByIdType, ID_TYPES, COUNTRIES, BOARDS, UNIVERSITIES } from '../utils/schema';
+// import {  } from '../context/WalletContext';
 
 const Issuer = () => {
-  const { formData, setFormData, issueCredential, setActiveTab } = useWallet();
+  const { formData, setFormData, issueCredential, setActiveTab, isDocIssuedAndSigned, getInitialFormData } = useWallet();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activePicker, setActivePicker] = useState(null);
+  const [selectedIdType, setSelectedIdType] = useState("");
 
   // Advanced Calendar State
   const [calView, setCalView] = useState('days'); // 'days' | 'years'
@@ -67,6 +69,12 @@ const Issuer = () => {
   // --- STRICT VALIDATION & SUBMIT ---
   const validateAndSubmit = async (e) => {
     e.preventDefault();
+    console.log(formData);
+    if (isDocIssuedAndSigned(formData.idType)) {
+      alert("This document is already issued and signed.");
+      return;
+    }
+
     const currentFields = getFieldsByIdType(formData.idType);
     let newErrors = [];
 
@@ -185,9 +193,36 @@ const Issuer = () => {
           <AnimatePresence>
             {isDropdownOpen && (
               <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute w-full mt-1 bg-[#0F1623] border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto custom-scrollbar">
-                {ID_TYPES.map((type) => (
-                  <div key={type} onClick={() => { setFormData(prev => ({ ...prev, idType: type })); setIsDropdownOpen(false); setErrorFields([]); }} className={`px-4 py-3 cursor-pointer text-xs font-bold border-b border-slate-800 hover:bg-slate-800 ${formData.idType === type ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-400'}`}>{type}</div>
-                ))}
+                {ID_TYPES.map((type) => {
+                  const issued = isDocIssuedAndSigned(type);
+
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      disabled={issued}
+                      onClick={() => {
+                        if (!issued) {
+                          setSelectedIdType(type);
+                          setFormData(getInitialFormData(type));
+                          setIsDropdownOpen(false);
+                        }
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm flex justify-between items-center ${issued
+                          ? "text-slate-500 cursor-not-allowed"
+                          : "text-slate-300 hover:bg-slate-700"
+                        }`}
+                    >
+                      <span>{type}</span>
+
+                      {issued && (
+                        <span className="text-xs text-green-400 font-bold">
+                          Issued ✓
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </motion.div>
             )}
           </AnimatePresence>

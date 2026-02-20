@@ -17,7 +17,7 @@ export const WalletProvider = ({ children }) => {
 
   const initialForm = {
     // fullName: '', 
-    idType: 'Aadhaar Card',
+    idType: '',
     // enrolmentId: '',
     // address: '',
     // timeOfBirth: '', 
@@ -30,6 +30,13 @@ export const WalletProvider = ({ children }) => {
     // passingYear: '',
     // fatherName: '',
     // panType: 'Individual'
+  };
+
+  const getInitialFormData = (type) => {
+    return {
+      ...initialForm,  // start from base
+      idType: type,    // set selected document type
+    };
   };
 
   const [formData, setFormData] = useState(initialForm);
@@ -58,16 +65,16 @@ export const WalletProvider = ({ children }) => {
     if (stored.length > 0) setCredentials(stored);
   }, []);
 
-  // --- CORE FUNCTIONS ---
-
-  const transformAttributes = (backendData) => {
-    const attrObj = {};
-    backendData.attributes.forEach(attr => {
-      const [key, value] = attr.split(":");
-      attrObj[key] = value;
-    });
-    return { ...backendData, ...attrObj }; // keeps id, issuedAt, signature, publicKey
+  // lock engine for only showing the documents not signed or deleted signed
+  const isDocIssuedAndSigned = (idType) => {
+    return credentials.some(
+      cred =>
+        cred?.credentialSubject?.idType === idType &&
+        cred?.proof?.signature
+    );
   };
+
+  // --- CORE FUNCTIONS ---
 
   const issueCredential = async () => {
     if (!formData.idType) return; // safety check
@@ -97,31 +104,25 @@ export const WalletProvider = ({ children }) => {
       const data = await response.json();
       console.log("Backend response:", data);
 
-      if (data && data.id) {
-        // Add the backend-issued credential to state
-        // console.log(data);
-        // setCredentials(prev => [data, ...prev]);
-        // console.log(credentials);
-        // setCredentials(prev => {
-        //   const newState = [data, ...prev];
-        //   console.log("New credentials inside setter:", newState);
-        //   return newState;
-        // });
-
-        // Transform attributes to make fields directly accessible
-        const transformedData = transformAttributes(data);
-
-        // Add the transformed credential to state
+      if (data?.id && data?.proof?.signature) {
+        // Add ORIGINAL credential to state
         setCredentials(prev => {
-          const newCreds = [transformedData, ...prev];
-          // Also save to localStorage
+          const newCreds = [data, ...prev];
+          // Save original format to localStorage
           saveCredentials(newCreds);
           return newCreds;
         });
 
-        setFormData(initialForm); // Reset the form
-        setActiveTab('holder');   // Switch to holder tab
-        addLog(`Issued: ${data.idType} (ID: ${data.id.substring(11, 19)})`);
+        // Reset UI
+        setFormData(initialForm);
+        setActiveTab('holder');
+
+        // Safe logging using new structure
+        const idType = data?.credentialSubject?.idType || "Credential";
+        const shortId = data.id?.substring(9, 17) || "";
+
+        addLog(`Issued: ${idType} (ID: ${shortId})`);
+
       } else {
         alert(data.error || "Failed to issue credential");
       }
@@ -134,10 +135,14 @@ export const WalletProvider = ({ children }) => {
     }
   };
 
-
   // FIXED: Improved deletion logic
   const deleteCredential = (idToDelete) => {
-    setCredentials(prev => prev.filter(card => card.id !== idToDelete));
+    setCredentials(prev => {
+      const updated = prev.filter(card => card.id !== idToDelete);
+      saveCredentials(updated);
+      return updated;
+    });
+
     addLog(`Deleted credential with ID: ${idToDelete.substring(11, 19)}`);
   };
 
@@ -154,7 +159,9 @@ export const WalletProvider = ({ children }) => {
       credentials,
       issueCredential,
       deleteCredential,
-      clearAllData
+      clearAllData,
+      isDocIssuedAndSigned,
+      getInitialFormData
     }}>
       {children}
     </WalletContext.Provider>

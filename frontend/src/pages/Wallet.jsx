@@ -26,7 +26,7 @@ const Wallet = () => {
         <ShieldAlert size={40} className="text-slate-700 mb-4" />
         <h3 className="text-2xl font-black text-white mb-2">Vault Empty</h3>
         <button onClick={() => setActiveTab('issuer')} className="px-6 py-3 bg-cyan-600 rounded-xl text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
-          Issue First ID <ArrowRight size={12} />
+          Issue ID First<ArrowRight size={12} />
         </button>
       </motion.div>
     );
@@ -62,12 +62,14 @@ const Wallet = () => {
                     <div className="bg-slate-900 p-3 rounded-xl text-cyan-400 border border-slate-800">
                       <Fingerprint size={20} />
                     </div>
+
                     <div>
                       <h4 className="text-white font-black text-sm uppercase">
-                        {card.fullName}
+                        {card?.credentialSubject?.fullName || "Unknown Holder"}
                       </h4>
+
                       <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
-                        {card.idType}
+                        {card?.credentialSubject?.idType || "Credential"}
                       </p>
                     </div>
                   </div>
@@ -98,8 +100,8 @@ const Wallet = () => {
                     animate={{ opacity: 1, height: "auto" }}
                     className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2"
                   >
-                    {getFieldsByIdType(card.idType).map((field) => {
-                      const value = card[field.name];
+                    {getFieldsByIdType(card?.credentialSubject?.idType).map((field) => {
+                      const value = card?.credentialSubject?.[field.name];
                       if (!value) return null;
 
                       return (
@@ -109,20 +111,29 @@ const Wallet = () => {
                         </div>
                       );
                     })}
+
                     {/* Backend meta */}
-                    <div className="flex justify-between text-xs">
+
+                    <div className="flex flex-col text-xs">
                       <span className="text-slate-400">Issued At</span>
-                      <span className="text-white font-semibold">{card.issuedAt}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">Public Key</span>
-                      <span className="text-white font-semibold break-all">{card.publicKey}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">Signature</span>
-                      <span className="text-white font-semibold break-all">{card.signature}</span>
+                      <span className="text-white font-semibold">
+                        {card.issuanceDate}
+                      </span>
                     </div>
 
+                    <div className="flex flex-col text-xs">
+                      <span className="text-slate-400">Public Key</span>
+                      <span className="text-white font-semibold break-all">
+                        {card.publicKey}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col text-xs">
+                      <span className="text-slate-400">Signature</span>
+                      <span className="text-white font-semibold break-all">
+                        {card?.proof?.signature}
+                      </span>
+                    </div>
                   </motion.div>
                 )}
 
