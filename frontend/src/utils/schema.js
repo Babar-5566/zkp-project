@@ -132,3 +132,14 @@ export const getFieldsByIdType = (idType) => {
     default: return [];
   }
 };
+
+export const predicateInfo = {
+  existence: { message: "It checks whether this field exists in the digital credential.", requiresInput: false },
+  equality: { message: "It checks whether this field matches the input value in the digital credential.", requiresInput: true },
+  "cross-field": { message: "It checks the relation between multiple fields in the credential.", requiresInput: false },
+  "numeric/range": { message: "It checks whether the numeric value satisfies the specified range.", requiresInput: true },
+  "date comparison": { message: "It checks whether the date satisfies the specified comparison.", requiresInput: true },
+  "string match": { message: "It checks whether the field matches the given string or pattern.", requiresInput: true },
+  hash: { message: "It checks whether the field matches the provided hash.", requiresInput: true },
+  "selective disclosure": { message: "It reveals only this field in the proof.", requiresInput: false },
+};

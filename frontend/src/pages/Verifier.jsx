@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { getFieldsByIdType } from "../utils/schema";
-import { generateFakeProof } from "../utils/predicateCheckers";
+import { predicateInfo } from "../utils/schema"
 
 const Verifier = () => {
   const { credentials, setActiveTab } = useWallet();
@@ -19,6 +19,8 @@ const Verifier = () => {
   const [status, setStatus] = useState('idle');
   const [showRawProof, setShowRawProof] = useState(false);
   const [proofData, setProofData] = useState(null);
+  const [predicateInputs, setPredicateInputs] = useState({});
+  // e.g., { "fullName:equality": "Alice Babar", "age:numeric/range": "18" }
 
   // --- Button Handlers ---
   const handleGenerateProofClick = () => {
@@ -235,40 +237,87 @@ const Verifier = () => {
               <h3 className="text-white font-black mb-6">Select Predicates for Each Field</h3>
 
               <div className="space-y-4 mb-8">
-                {getFieldsByIdType(selectedCard.credentialSubject?.idType).map((field) => (
-                  <div key={field.name} className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        {field.icon && <field.icon size={16} className="text-cyan-400" />}
-                        <span className="text-[10px] font-bold text-slate-300 uppercase">{field.label}</span>
-                      </div>
-                      {/* Optional: show current value */}
-                      <span className="text-[9px] text-slate-400">{selectedCard.credentialSubject?.[field.name]}</span>
-                    </div>
+                {getFieldsByIdType(selectedCard.credentialSubject?.idType).map((field) => {
+                  const isExpanded = disclosedFields.some((x) => x.startsWith(`${field.name}:`));
 
-                    {/* Predicates buttons */}
-                    <div className="flex flex-wrap gap-2">
-                      {field.predicates?.map((pred) => (
-                        <button
-                          key={pred}
-                          onClick={() =>
-                            setDisclosedFields((prev) =>
-                              prev.includes(`${field.name}:${pred}`)
-                                ? prev.filter((x) => x !== `${field.name}:${pred}`)
-                                : [...prev, `${field.name}:${pred}`]
-                            )
-                          }
-                          className={`px-2 py-1 text-[9px] font-bold rounded-md border transition-all ${disclosedFields.includes(`${field.name}:${pred}`)
-                            ? "bg-cyan-500/20 border-cyan-500 text-cyan-400"
-                            : "bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700"
-                            }`}
-                        >
-                          {pred}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                  return (
+                    <motion.div
+                      key={field.name}
+                      layout
+                      className="bg-slate-900/50 border border-slate-800 rounded-xl p-4 overflow-hidden"
+                    >
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {field.icon && <field.icon size={16} className="text-cyan-400" />}
+                          <span className="text-[10px] font-bold text-slate-300 uppercase">{field.label}</span>
+                        </div>
+                        <span className="text-[9px] text-slate-400">{selectedCard.credentialSubject?.[field.name]}</span>
+                      </div>
+
+                      {/* Predicates */}
+                      <div className="flex flex-wrap gap-2">
+                        {field.predicates?.map((pred) => (
+                          <button
+                            key={pred}
+                            onClick={() =>
+                              setDisclosedFields((prev) =>
+                                prev.includes(`${field.name}:${pred}`)
+                                  ? prev.filter((x) => x !== `${field.name}:${pred}`)
+                                  : [...prev, `${field.name}:${pred}`]
+                              )
+                            }
+                            className={`px-2 py-1 text-[9px] font-bold rounded-md border transition-all ${disclosedFields.includes(`${field.name}:${pred}`)
+                              ? "bg-cyan-500/20 border-cyan-500 text-cyan-400"
+                              : "bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700"
+                              }`}
+                          >
+                            {pred}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Instruction & Input */}
+                      {disclosedFields
+                        .filter((x) => x.startsWith(`${field.name}:`))
+                        .map((selected) => {
+                          const pred = selected.split(':')[1];
+                          const info = predicateInfo[pred];
+
+                          return (
+                            <div
+                              key={selected}
+                              className="mt-2 transition-all duration-300 ease-in-out"
+                            >
+                              {/* Predicate label */}
+                              <span className="inline-block bg-slate-700 text-cyan-400 text-[8px] px-2 py-0.5 rounded uppercase mb-1">
+                                {pred}
+                              </span>
+
+                              {/* Message */}
+                              <p className="text-[9px] text-slate-400 italic">{info.message}</p>
+
+                              {/* Input if required */}
+                              {info.requiresInput && (
+                                <input
+                                  type="text"
+                                  value={predicateInputs[selected] || ""}
+                                  onChange={(e) =>
+                                    setPredicateInputs((prev) => ({
+                                      ...prev,
+                                      [selected]: e.target.value
+                                    }))
+                                  }
+                                  placeholder="Enter value"
+                                  className="mt-1 w-full bg-slate-800 text-white rounded px-2 py-1 text-[10px]"
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                    </motion.div>
+                  );
+                })}
               </div>
 
               {/* GENERATE PROOF BUTTON */}
