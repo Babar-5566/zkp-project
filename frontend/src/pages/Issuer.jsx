@@ -33,29 +33,64 @@ const Issuer = () => {
 
   // --- HANDLERS ---
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, selectionStart } = e.target; // <-- get cursor position
     let finalValue = value;
 
     // Auto-Format
-    if (['panID', 'passportID', 'licenseID', 'rollNumber'].includes(name)) finalValue = value.toUpperCase();
-    if (name === 'aadhaarNumber') finalValue = value.replace(/\D/g, '').slice(0, 12); // Limit to 12
-
-    // --- Custom-date field formatting ---
-    if (name === 'dob') {
-      // Remove non-digit characters
-      let digits = value.replace(/\D/g, '').slice(0, 8); // Max 8 digits: DDMMYYYY
-      if (digits.length >= 3) digits = digits.slice(0, 2) + '/' + digits.slice(2);
-      if (digits.length >= 6) digits = digits.slice(0, 5) + '/' + digits.slice(5, 9);
-      finalValue = digits;
+    if (['panID', 'passportID', 'licenseID', 'rollNumber'].includes(name)) {
+      finalValue = value.toUpperCase();
+    }
+    if (name === 'aadhaarNumber') {
+      finalValue = value.replace(/\D/g, '').slice(0, 12); // Limit to 12
     }
 
+    // --- Custom-date field formatting ---
+    if (name === 'dob' || name === "expiryDate") {
+      // Remove non-digit characters
+      let digits = value.replace(/\D/g, '').slice(0, 8); // Max 8 digits: DDMMYYYY
+
+      // Auto-insert slashes
+      if (digits.length > 2) digits = digits.slice(0, 2) + '/' + digits.slice(2);
+      if (digits.length > 5) digits = digits.slice(0, 5) + '/' + digits.slice(5, 9);
+
+      finalValue = digits;
+
+      // --- Save and adjust cursor position ---
+      let newPos = selectionStart;
+      // If a slash is added, move cursor forward
+      if (selectionStart === 2 || selectionStart === 5) newPos += 1;
+
+      // Update formData first
+      setFormData(prev => ({ ...prev, [name]: finalValue }));
+
+      // Restore cursor after render
+      setTimeout(() => {
+        const input = e.target;
+        if (input === document.activeElement) {
+          input.setSelectionRange(newPos, newPos);
+        }
+      }, 0);
+
+      // --- Validate date ---
+      if (!isValidDate(name, finalValue)) {
+        setErrorFields(prev => prev.includes(name) ? prev : [...prev, name]);
+      } else {
+        setErrorFields(prev => prev.filter(f => f !== name));
+      }
+
+      return; // exit early, no need to run rest of handler for dates
+    }
+
+    // Other fields: update value
     setFormData(prev => ({ ...prev, [name]: finalValue }));
 
     // Remove error when user types
     if (errorFields.includes(name)) {
       setErrorFields(prev => prev.filter(f => f !== name));
     }
-    if (verifiedFields[name]) setVerifiedFields(prev => ({ ...prev, [name]: false }));
+    if (verifiedFields[name]) {
+      setVerifiedFields(prev => ({ ...prev, [name]: false }));
+    }
 
     // Filter Logic
     const lowerVal = value.toLowerCase();
@@ -79,6 +114,7 @@ const Issuer = () => {
   const validateAndSubmit = async (e) => {
     e.preventDefault();
     console.log(formData);
+
     if (isDocIssuedAndSigned(formData.idType)) {
       alert("This document is already issued and signed.");
       return;
@@ -93,6 +129,11 @@ const Issuer = () => {
         newErrors.push(field.name);
       }
     });
+
+    // Date Validation Here ---
+    if (formData.dob && !isValidDate('dob', formData.dob)) {
+      newErrors.push('dob');
+    }
 
     // 2. Strict Pattern Check
     if (formData.idType === 'Aadhaar Card') {
@@ -176,6 +217,25 @@ const Issuer = () => {
     }
   };
 
+  const isValidDate = (name, str) => {
+    const parts = str.split('/');
+    if (parts.length !== 3) return false;
+    const [day, month, year] = parts.map(Number);
+    console.log(day, month, year);
+    // Check numbers are valid
+    if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1000 || year > 9999) return false;
+
+    // Extra check for dob: year cannot be in the future
+    if (name === 'dob') {
+      const currentYear = new Date().getFullYear();
+      if (year > currentYear) return false;
+    }
+    console.log("check");
+    // Check if JS Date can represent it correctly
+    const date = new Date(year, month - 1, day);
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+  };
+
   const currentFields = getFieldsByIdType(formData.idType);
 
   return (
@@ -257,7 +317,20 @@ const Issuer = () => {
                   : (field.type === 'custom-date' || field.type === 'date') ? (
                     <div className="relative group">
                       <field.icon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
-                      <input type="text" name={field.name} value={formData[field.name] || ''} onChange={handleInputChange} placeholder="DD/MM/YYYY"
+                      <input type="text" name={field.name} value={formData[field.name] || ''} onChange={handleInputChange}
+                        onBlur={() => {
+                          const value = formData[field.name]; // current input value
+                          if (!isValidDate(field.name, value)) {
+                            if (!errorFields.includes(field.name)) {
+                              setErrorFields(prev => [...prev, field.name]);
+                            }
+                          } else {
+                            if (errorFields.includes(field.name)) {
+                              setErrorFields(prev => prev.filter(f => f !== field.name));
+                            }
+                          }
+                        }}
+                        placeholder="DD/MM/YYYY"
                         className={`w-full bg-[#0B101B] border rounded-xl py-3 pl-10 pr-12 text-sm text-slate-200 focus:outline-none font-bold ${errorFields.includes(field.name) ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'border-slate-800 focus:border-cyan-500/50'}`} />
 
                       <button type="button" onClick={() => { setActivePicker(activePicker === field.name ? null : field.name); setCalView('days'); }}
