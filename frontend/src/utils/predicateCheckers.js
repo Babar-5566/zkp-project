@@ -1,5 +1,5 @@
 /* utils/predicateCheckers.js */
-
+// Not being used
 /* ================= PREDICATE FUNCTIONS ================= */
 
 // Existence check

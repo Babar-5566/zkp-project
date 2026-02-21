@@ -3,9 +3,8 @@ const { getKeyPair } = require("../config/keys");
 
 /**
  * Sign attributes using BBS+ for selective disclosure
- * @param {Array} attributes - array of strings like ["fullName:Alice", "dob:2000-01-01"]
- * @param {String} context - domain label like "DrivingLicense"
- * @returns Base64 encoded signature
+ * @param {Array} attributes - ["fullName:Alice", "dob:2000-01-01"]
+ * @param {String} context - domain label like "AadhaarCard"
  */
 async function signAttributes(attributes, context = "Default") {
   try {
@@ -15,24 +14,30 @@ async function signAttributes(attributes, context = "Default") {
       throw new Error("Issuer key pair is not initialized");
     }
 
-    // 1️⃣ Sort attributes to ensure deterministic signature
+    // 1️⃣ Deterministic ordering
     const sortedAttributes = [...attributes].sort();
 
-    // 2️⃣ Encode attributes as Uint8Array
-    const messages = sortedAttributes.map(attr => new TextEncoder().encode(attr));
+    // 2️⃣ Encode messages
+    const messages = sortedAttributes.map(attr =>
+      new TextEncoder().encode(attr)
+    );
 
-    // 3️⃣ Encode context as Uint8Array (prevents cross-domain misuse)
+    // 3️⃣ Encode context
     const contextEncoded = new TextEncoder().encode(context);
 
-    // 4️⃣ Generate BBS+ signature
+    // 4️⃣ Sign
     const signature = await blsSign({
       keyPair,
       messages,
       context: contextEncoded
     });
 
-    // 5️⃣ Return signature as Base64 string for easy storage/transmission
-    return Buffer.from(signature).toString("base64");
+    // ✅ IMPORTANT: return full signing metadata
+    return {
+      signature: Buffer.from(signature).toString("base64"),
+      messages: sortedAttributes,
+      context
+    };
 
   } catch (err) {
     console.error("Error in signAttributes:", err);

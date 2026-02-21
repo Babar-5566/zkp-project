@@ -82,7 +82,7 @@ async function issueCredential(req, res) {
         };
 
         console.log("Converted:", JSON.stringify(verifiableCredential, null, 2));
-
+        
         // 🔥 Send output to frontend
         res.json(verifiableCredential);
 

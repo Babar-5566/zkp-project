@@ -131,7 +131,7 @@ const Wallet = () => {
                     <div className="flex flex-col text-xs">
                       <span className="text-slate-400">Signature</span>
                       <span className="text-white font-semibold break-all">
-                        {card?.proof?.signature}
+                        {card?.proof?.signature?.signature}
                       </span>
                     </div>
                   </motion.div>

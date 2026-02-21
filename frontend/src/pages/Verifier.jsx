@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { getFieldsByIdType } from "../utils/schema";
-import { predicateInfo } from "../utils/schema"
+import { predicateInfo } from "../utils/schema";
+import { generateBbsProof } from "../utils/bbsProof";
 
 const Verifier = () => {
   const { credentials, setActiveTab } = useWallet();
@@ -39,91 +40,67 @@ const Verifier = () => {
   const logsEndRef = useRef(null);
   useEffect(() => { logsEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [logs]);
 
-  const startVerification = () => {
-    setStep(3);      // Move to terminal
-    setLogs([]);     // Clear previous logs
-    setStatus('idle');
-    setShowRawProof(false);
-
-    const delay = (ms) => new Promise(res => setTimeout(res, ms));
-    const addLog = (msg, type) => setLogs(prev => [...prev, { msg, type }]);
-
-    const generateFakeProof = () => {
-      const now = new Date().toISOString();
-      const randomHex = (len = 16) =>
-        '0x' + Array.from({ length: len }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  const buildPredicatesFromUI = () => {
+    return disclosedFields.map(field => {
+      const [attribute, predicate] = field.split(':')
 
       return {
-        request_id: `req_${Math.floor(Math.random() * 10000)}`,
-        timestamp: now,
-        scope: {
-          id: "verifier_A.example.com",
-          pseudonym: randomHex(8)
-        },
-        disclosed_attributes: disclosedFields.reduce((acc, field) => {
-          const [name, val] = field.split(':');
-          acc[name] = val;
-          return acc;
-        }, {}),
-        bbs_proof: {
-          proof: `b64:${randomHex(32)}`,
-          issuer_pubkey: "pk_issuer_xyz",
-          nonce: randomHex(8)
-        },
-        zk_proof: {
-          protocol: "groth16",
-          curve: "bn128",
-          pi_a: [randomHex(8), randomHex(8)],
-          pi_b: [[randomHex(8), randomHex(8)], [randomHex(8), randomHex(8)]],
-          pi_c: [randomHex(8), randomHex(8)]
-        },
-        public_inputs: {
-          predicate_inputs: disclosedFields.reduce((acc, field) => {
-            const [name, val] = field.split(':');
-            acc[name] = val;
-            return acc;
-          }, {}),
-          credential_commitment: randomHex(16),
-          scope_pseudonym: randomHex(8),
-          challenge: randomHex(8)
-        },
-        binding: {
-          proof_hash: randomHex(16),
-          credential_hash: randomHex(16),
-          circuit_id: "age_degree_v3"
-        }
-      };
-    };
-
-    // Logs sequence with dynamic delays
-    const sequence = [
-      { msg: "Initializing SnarkJS environment...", delay: 500 },
-      { msg: "Loading circuit: 'circuits/identityCheck.wasm'...", delay: 1200 },
-      { msg: "Reading wallet credentials (encrypted)...", delay: 800 },
-      { msg: "Preparing predicate inputs...", delay: 1000 },
-      { msg: "Generating ZK-Proof (Groth16)...", delay: 1500 },
-      { msg: "Proof generated successfully.", delay: 2000 },
-      { msg: "Verifying proof on-chain...", delay: 1500 },
-      { msg: "VERIFICATION SUCCESSFUL: Identity Verified ✅", delay: 1000, type: "success" }
-    ];
-
-    let i = 0;
-
-    const runLogs = async () => {
-      if (i < sequence.length) {
-        const { msg, delay: d, type } = sequence[i];
-        addLog(msg, type);
-        i++;
-        setTimeout(runLogs, d);
-      } else {
-        setStatus('success');
-        // Set the dynamic proof JSON after logs finish
-        setProofData(generateFakeProof());
+        attribute,
+        type: predicate.toLowerCase(),
+        value: predicateInputs[field] || null
       }
-    };
+    })
+  }
 
-    runLogs();
-  };
+  const startVerification = async () => {
+    setStep(3)
+    setLogs([])
+    setStatus('idle')
+    setShowRawProof(false)
+
+    const addLog = (msg, type) =>
+      setLogs(prev => [...prev, { msg, type }])
+
+    try {
+      addLog("Loading credential from wallet...")
+      await new Promise(r => setTimeout(r, 600))
+
+      const vc = selectedCard
+      console.log("VC :", vc)
+      if (!vc) throw new Error("No credential selected")
+        
+        addLog("Parsing attributes...")
+      await new Promise(r => setTimeout(r, 600))
+
+      const predicates = buildPredicatesFromUI()
+      // const predicates = selectedPredicates // your UI state
+      
+      if (!predicates.length) {
+        throw new Error("No attributes selected for proof")
+      }
+      
+      addLog("Preparing BBS proof request...")
+      await new Promise(r => setTimeout(r, 800))
+
+      addLog("Generating selective disclosure proof...")
+      const proof = await generateBbsProof({
+        vc,
+        predicates
+      })
+
+      await new Promise(r => setTimeout(r, 800))
+
+      addLog("Proof generated successfully ✅", "success")
+
+      setProofData(proof)
+      setStatus('success')
+
+    } catch (err) {
+      console.error("BBS ERROR:", err)
+      addLog("Proof generation failed ❌", "error")
+      addLog(err.message || "Unknown error")
+    }
+  }
 
 
   // --- EMPTY STATE (FIXED NAVIGATION) ---
