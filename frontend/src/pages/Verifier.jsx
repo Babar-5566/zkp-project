@@ -397,7 +397,7 @@ const Verifier = () => {
           >
             {/* BACK BUTTON */}
             <button
-              onClick={() => setStep(1)}
+              onClick={() => setStep(0)}
               className="flex items-center gap-2 mb-6 group"
             >
               <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-all">
@@ -429,6 +429,7 @@ const Verifier = () => {
                 >
                   Search
                 </button> */}
+                {/* no need of button, input change will make the search query run automatically as used useEffect */}
               </div>
 
               <div className="space-y-4 mb-8">
