@@ -262,7 +262,7 @@ The working prototype successfully demonstrates a complete end-to-end Zero-Knowl
 
 * Privacy-preserving verification
 
-*Automated demonstration
+* Automated demonstration
 
 ___
 
