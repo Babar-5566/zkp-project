@@ -34,6 +34,9 @@ Technologies Used
 ___
 
 ## 2. System Architecture
+## 2. System Architecture
+
+```text
 +------------+        +------------+        +-------------+
 |   Issuer   | -----> |   Holder   | -----> |   Verifier  |
 |  (Server)  |        |  (Wallet)  |        |  (Service)  |
@@ -42,7 +45,8 @@ ___
      |--- Signed Credential->|                    |
                              |--- ZK Proof ------>|
                                                   |
-                                          Verification Result
+                                      Verification Result
+``` 
 ___
 ## 3. Issuer Component
 ### 3.1 Responsibilities
@@ -226,11 +230,11 @@ ___
 
 ## 8. Privacy Properties Observed in Demo
 Property	Demonstrated
-Selective Disclosure ------	Yes
-Unlinkability ------	Yes
-Hidden Attribute Protection ------	Yes
-Issuer Signature Validation ------	Yes
-Zero-Knowledge Proof Correctness ------	Yes
+Selective Disclosure ------	Yes  
+Unlinkability ------ Yes  
+Hidden Attribute Protection ------	Yes  
+Issuer Signature Validation ------	Yes  
+Zero-Knowledge Proof Correctness ------	Yes  
 
 ___
 ## 9. Implementation Notes
