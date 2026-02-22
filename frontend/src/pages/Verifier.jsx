@@ -25,6 +25,8 @@ const Verifier = () => {
   // e.g., { "fullName:equality": "Alice Babar", "age:numeric/range": "18" }
   const [verifierSelections, setVerifierSelections] = useState([])
   const allFields = getAllSchemaFields()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [filteredFields, setFilteredFields] = useState(allFields)
 
   // --- Button Handlers ---
   const handleGenerateProofClick = () => {
@@ -34,6 +36,18 @@ const Verifier = () => {
     setLogs([]);
     setStatus("idle");
   };
+
+  // search handler
+  useEffect(() => {
+    const q = searchQuery.toLowerCase()
+
+    setFilteredFields(
+      allFields.filter(field =>
+        field.name.toLowerCase().includes(q) ||
+        field.label.toLowerCase().includes(q)
+      )
+    )
+  }, [searchQuery])
 
   const toggleVerifierPredicate = (fieldName, pred) => {
     const key = `${fieldName}:${pred}`
@@ -399,9 +413,27 @@ const Verifier = () => {
                 Verifier — Select Predicates
               </h3>
 
+              {/* search option */}
+              <div className="flex gap-2 mb-6">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search attributes..."
+                  className="flex-1 bg-slate-800 text-white rounded px-3 py-2 text-sm"
+                />
+
+                {/* <button
+                  onClick={handleSearch}
+                  className="px-4 py-2 bg-orange-600 rounded font-bold text-white text-xs uppercase"
+                >
+                  Search
+                </button> */}
+              </div>
+
               <div className="space-y-4 mb-8">
 
-                {allFields.map((field) => {
+                {filteredFields.map((field) => {
 
                   return (
                     <motion.div
