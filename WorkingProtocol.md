@@ -23,7 +23,7 @@ Cryptographic verification
 
 Privacy-preserving authentication flow
 
-The system is implemented using:
+Technologies Used
 
 JavaScript / Node.js (Backend)
 
@@ -58,14 +58,14 @@ Returns signed credential to holder
 
 POST /issue-credential
 
-Input:
+Input
 {
   "id": "12345",
   "name": "John Doe",
   "age": 21,
   "citizenship": "Indian"
 }
-Process:
+Process
 
 Create credential object
 
@@ -75,7 +75,7 @@ Sign using issuer private key
 
 Return signed credential
 
-Output:
+Output
 {
   "credential": {...},
   "signature": "0xABC123..."
@@ -108,7 +108,6 @@ Show raw proof (optional debug mode)
 When verifier requests:
 
 Example:
-
 Prove age ≥ 18
 
 Holder performs:
@@ -165,7 +164,7 @@ Start Wallet (Holder)
 
 Start Verifier
 
-Automatically:
+Then automatically:
 
 Issue credential
 
@@ -204,10 +203,15 @@ async function runDemo() {
 The working prototype proves:
 
 ✔ Selective Disclosure
+
 ✔ Zero-Knowledge Privacy
+
 ✔ Signature-based Authenticity
+
 ✔ Unforgeability
+
 ✔ Integrity Protection
+
 ✔ Predicate Proof (e.g., age ≥ 18)
 
 8. Privacy Properties Observed in Demo
@@ -219,15 +223,15 @@ Issuer Signature Validation	Yes
 Zero-Knowledge Proof Correctness	Yes
 9. Implementation Notes
 
-Issuer private key is securely stored.
+Issuer private key is securely stored
 
-Public key is shared with verifier.
+Public key is shared with verifier
 
-Proof generation occurs client-side (Holder).
+Proof generation occurs client-side (Holder)
 
-Verifier does not access full credential.
+Verifier does not access full credential
 
-Raw proof inspection mode available for debugging.
+Raw proof inspection mode available for debugging
 
 10. Summary
 
