@@ -175,7 +175,7 @@ To demonstrate the complete workflow automatically:
 
 3. Start Verifier
 
-Then automatically:
+4. Then automatically:
 
 * Issue credential
 
