@@ -22,11 +22,11 @@ async function issueCredential(req, res) {
         const attributes = Object.entries(data).map(
             ([key, value]) => `${key}:${typeof value === "object" ? JSON.stringify(value) : value}`
         );
-
+        
+        console.log("attributes: "+attributes);
+        
         // Generate BBS+ signature
         const signature = await signAttributes(attributes);
-
-
 
         // const digitalID = {
         //     id: uuidv4(),
@@ -75,13 +75,15 @@ async function issueCredential(req, res) {
                 created: new Date().toISOString(),
                 proofPurpose: "assertionMethod",
                 verificationMethod: `${issuerDid}#key-1`,
-                signature
+                signature,
+                
             },
 
             publicKey: Buffer.from(getKeyPair().publicKey).toString("base64")
         };
 
         console.log("Converted:", JSON.stringify(verifiableCredential, null, 2));
+        console.log("publicKey:", Buffer.from(getKeyPair().publicKey).toString("base64"));
         
         // 🔥 Send output to frontend
         res.json(verifiableCredential);

@@ -34,6 +34,22 @@ export const ID_TYPES = [
   'University Degree'
 ];
 
+export const getAllSchemaFields = () => {
+  const map = new Map()
+
+  ID_TYPES.forEach(type => {
+    const fields = getFieldsByIdType(type)
+
+    fields.forEach(field => {
+      if (!map.has(field.name)) {
+        map.set(field.name, field)
+      }
+    })
+  })
+
+  return Array.from(map.values())
+}
+
 const getToday = () => new Date().toISOString().split('T')[0];
 const getCurrentYear = () => new Date().getFullYear();
 
