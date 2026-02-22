@@ -1,205 +1,207 @@
-1️⃣ Protocol Description
-1. System Overview
+# 1️⃣ Protocol Description
+
+## 1. System Overview
 
 This system implements a privacy-preserving digital identity framework using Zero-Knowledge Proofs (ZKP).
 
 The architecture follows a decentralized identity model consisting of three main entities:
 
-Issuer
-
-Holder (Wallet)
-
-Verifier
+- Issuer
+- Holder (Wallet)
+- Verifier
 
 The system allows a holder to prove specific attributes of a credential without revealing the entire credential, ensuring privacy, integrity, and unforgeability.
 
 The protocol ensures:
 
-Selective disclosure
+- Selective disclosure
+- Unlinkability
+- Unforgeability
+- Integrity
+- Zero-knowledge privacy
 
-Unlinkability
+---
 
-Unforgeability
+## 2. Entities
 
-Integrity
-
-Zero-knowledge privacy
-
-2. Entities
-2.1 Issuer
+### 2.1 Issuer
 
 The Issuer is a trusted authority responsible for:
 
-Verifying real-world identity or attributes
-
-Generating digital credentials
-
-Signing credentials using its private key
+- Verifying real-world identity or attributes
+- Generating digital credentials
+- Signing credentials using its private key
 
 The issuer holds:
 
-Public key (shared)
-
-Private key (secret)
+- Public key (shared)
+- Private key (secret)
 
 Only the issuer can generate valid credentials.
 
-2.2 Holder (Wallet)
+---
+
+### 2.2 Holder (Wallet)
 
 The Holder is the user who:
 
-Receives credential from issuer
-
-Stores credential securely in wallet
-
-Generates zero-knowledge proofs when required
+- Receives credential from issuer
+- Stores credential securely in wallet
+- Generates zero-knowledge proofs when required
 
 The holder never reveals the full credential unless required.
 
-2.3 Verifier
+---
+
+### 2.3 Verifier
 
 The Verifier is an entity that:
 
-Requests proof of specific attributes
-
-Verifies the zero-knowledge proof
-
-Does not learn hidden attributes
+- Requests proof of specific attributes
+- Verifies the zero-knowledge proof
+- Does not learn hidden attributes
 
 The verifier uses the issuer's public key to validate authenticity.
 
-3. Credential Issuance Flow
+---
 
-Step 1: Identity Verification
+## 3. Credential Issuance Flow
+
+**Step 1: Identity Verification**  
 Issuer verifies holder’s real-world information.
 
-Step 2: Credential Creation
+**Step 2: Credential Creation**  
 Issuer creates credential:
 
+```bash
 Credential = {
-  id,
-  attributes,
-  issuanceDate,
-  issuerID
+id,
+attributes,
+issuanceDate,
+issuerID
 }
-
-Step 3: Digital Signature
+```
+  
+**Step 3: Digital Signature**  
 Issuer signs credential using private key:
 
+```bash
 Signature = Sign_privateKey(Hash(Credential))
+```
 
-Step 4: Delivery
+**Step 4: Delivery**  
 Signed credential is securely transmitted to Holder.
 
-Step 5: Storage
+**Step 5: Storage**  
 Holder stores credential in wallet.
 
-Security Properties Achieved:
+**Security Properties Achieved:**
 
-Integrity
+- Integrity
+- Unforgeability
+- Authenticity
 
-Unforgeability
+---
 
-Authenticity
-
-4. Proof Generation Flow (Selective Disclosure)
+## 4. Proof Generation Flow (Selective Disclosure)
 
 When a verifier requests proof:
 
-Example request:
+**Example request:**
 
+```bash
 Prove age ≥ 18
+```
 
-Step 1: Holder selects required attribute
-Step 2: Holder generates Zero-Knowledge Proof:
+**Step 1:** Holder selects required attribute  
+**Step 2:** Holder generates Zero-Knowledge Proof:
 
+```bash
 Proof = ZKP(credential, hidden_attributes, disclosed_attributes)
+```
 
-Step 3: Proof includes:
+**Step 3:** Proof includes:
 
-Selectively disclosed attributes
+- Selectively disclosed attributes
+- Cryptographic proof
+- Issuer signature reference
 
-Cryptographic proof
-
-Issuer signature reference
-
-Important:
+**Important:**  
 Holder does NOT reveal entire credential.
 
-Security Properties:
+**Security Properties:**
 
-Zero-knowledge
+- Zero-knowledge
+- Selective disclosure
+- Unlinkability
 
-Selective disclosure
+---
 
-Unlinkability
+## 5. Verification Flow
 
-5. Verification Flow
+**Step 1:** Verifier receives:
 
-Step 1: Verifier receives:
+- Disclosed attributes
+- ZKP proof
 
-Disclosed attributes
+**Step 2:** Verifier checks:
 
-ZKP proof
+- Signature validity using issuer public key
+- Correctness of ZKP
 
-Step 2: Verifier checks:
-
-Signature validity using issuer public key
-
-Correctness of ZKP
-
-Step 3:
-If verification succeeds → Access granted
+**Step 3:**  
+If verification succeeds → Access granted  
 Else → Access denied
 
 Verifier learns:
 
-Only requested attributes
+- Only requested attributes
+- Nothing about hidden fields
 
-Nothing about hidden fields
+---
 
-6. Cryptographic Primitives Used
+## 6. Cryptographic Primitives Used
 
 Your project can mention:
 
-1. Digital Signatures
+### 1. Digital Signatures
 
 Used for credential authenticity.
 
 Example:
 
-RSA
+- RSA
+- ECDSA
+- EdDSA
+- BBS+ (if using advanced selective disclosure)
 
-ECDSA
+---
 
-EdDSA
-
-BBS+ (if using advanced selective disclosure)
-
-2. Hash Function
+### 2. Hash Function
 
 Used to ensure data integrity.
 
 Example:
 
-SHA-256
+- SHA-256
 
-3. Zero-Knowledge Proof System
+---
+
+### 3. Zero-Knowledge Proof System
 
 Used to prove possession of credential without revealing full data.
 
 Example:
 
-Schnorr protocol
+- Schnorr protocol
+- zk-SNARK
+- BBS+ selective disclosure
+- Custom proof construction
 
-zk-SNARK
+---
 
-BBS+ selective disclosure
-
-Custom proof construction
-
-
-
-Issuer  →  Holder  : Signed Credential
-Holder  →  Verifier : Selective ZKP Proof
-Verifier →  Holder  : Verification Result
+```bash
+Issuer → Holder : Signed Credential
+Holder → Verifier : Selective ZKP Proof
+Verifier → Holder : Verification Result
+```
