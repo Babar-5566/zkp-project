@@ -7,6 +7,42 @@ Starting on 14.2.26
 - revocaion handling (used accumalator way to solve this\n
 
 {What's done : accumulator.json being generated in data folder}
+
+# flow :-
+```bash
+Verifier creates proof request
+        ↓
+Request encoded into QR / link
+        ↓
+User scans with wallet
+        ↓
+Wallet checks request
+        ↓
+User selects credential
+        ↓
+Wallet generates BBS proof
+        ↓
+Wallet sends proof response
+        ↓
+Verifier verifies proof
+        ↓
+Decision (accept / reject)
+```
+
+# Architecture :-
+```bash
+Verifier backend
+     ↓
+ QR generator
+     ↓
+ User wallet
+     ↓
+ Proof generator
+     ↓
+ Verifier API
+     ↓
+ Decision engine
+```
 # Cuurent Schema for different certificates :-
 ```  bash
 - Aadhaar: [
@@ -130,34 +166,36 @@ Selective disclosure → BBS+ only
 ```bash
 (Verifier → Wallet)
 {
-  "request_id": "string",
-  "credential_type": "string",
+  "version": "1.0",
+  "id": "request-uuid",
+  "type": "BbsProofRequest",
 
-  "issuer_pubkey": "string",
+  "credential_type": "identity_credential",
+  "issuer_pubkey": "issuer-key",
 
-  "scope_id": "verifier_unique_identifier",
+  "scope_id": "verifier.example.com",
 
-  "challenge": "random_nonce",
+  "nonce": "random-challenge",
+  "context": "Default",
 
-  "disclosures": ["attribute"],
+  "requested_attributes": [
+    { "name": "fullName", "predicate": "reveal" }
+  ],
 
-  "predicates": [
-    {
-      "attribute": "string",
-      "type": "range | equals | set | hash | boolean | date",
-      "params": {}
-    }
+  "requested_predicates": [
+    { "name": "age", "predicate": "range", "min": 18 }
   ],
 
   "zk": {
-    "circuit_id": "string",
-    "verification_key_id": "string"
+    "circuit_id": "age_check_v1",
+    "verification_key_id": "vk_01"
   },
 
-  "expires_at": "ISO_timestamp"
+  "response_uri": "https://verifier.com/api/verify",
+  "expires_at": 1710000000
 }
 
-
+Do not prefer example !!!
 example:
 {
   "request_id": "req_8891",
