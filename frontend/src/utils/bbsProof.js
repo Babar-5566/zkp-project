@@ -41,8 +41,11 @@ export async function generateBbsProof({ vc, predicates, context = "Default" }) 
         const revealIndices = [];
         predicates.forEach(p => {
             if (p.type === "equality" || p.type === "reveal") {
-                const idx = messages.findIndex(m => m.startsWith(`${p.attribute}:`));
-                if (idx !== -1) revealIndices.push(idx);
+                const idx = vc.proof.signature.messages.findIndex(m =>
+                    m === `${p.attribute}:${p.value}`);
+                if (idx === -1)
+                    throw new Error(`Equality predicate failed for ${p.attribute}`);
+                revealIndices.push(idx);
             }
         });
 
@@ -52,12 +55,12 @@ export async function generateBbsProof({ vc, predicates, context = "Default" }) 
         // Generate a random nonce for proof
         const nonce = crypto.getRandomValues(new Uint8Array(32));
 
-        const publicKeyBytes = Uint8Array.from(Buffer.from(publicKey, "base64"));
+        // const publicKeyBytes = Uint8Array.from(Buffer.from(publicKey, "base64"));
 
         // Create BBS+ selective disclosure proof
         const proof = await blsCreateProof({
             signature,
-            publicKey: publicKeyBytes,
+            publicKey,
             messages: messageBytes,
             revealed: revealIndices,
             nonce,
@@ -68,7 +71,7 @@ export async function generateBbsProof({ vc, predicates, context = "Default" }) 
         return {
             proof: btoa(String.fromCharCode(...proof)),
             revealIndices,
-            messages : vc.proof.signature.messages
+            messages: vc.proof.signature.messages
         };
 
     } catch (err) {

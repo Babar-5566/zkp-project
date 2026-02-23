@@ -130,6 +130,8 @@ const Verifier = () => {
         throw new Error("No attributes selected for proof")
       }
 
+      console.log(predicates);
+
       addLog("Preparing BBS proof request...")
       await new Promise(r => setTimeout(r, 800))
 
