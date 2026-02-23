@@ -34,7 +34,7 @@ async function signAttributes(attributes, context = "Default") {
 
     console.log("sinature:"+signature);
     console.log("messages: "+messages);
-    console.log("context: "+context);
+    console.log("context: "+contextEncoded);
     
     // ✅ IMPORTANT: return full signing metadata
     return {
