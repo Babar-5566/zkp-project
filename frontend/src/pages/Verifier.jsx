@@ -103,7 +103,7 @@ const Verifier = () => {
     })
   }
 
-  const startVerification = async () => {
+  const startGeneration = async () => {
     setStep(3)
     setLogs([])
     setStatus('idle')
@@ -352,7 +352,7 @@ const Verifier = () => {
               {/* GENERATE PROOF BUTTON */}
               <button
                 disabled={!isGenerateValid}
-                onClick={startVerification}
+                onClick={startGeneration}
                 className="w-full py-4 bg-cyan-600 rounded-xl font-black text-white text-[10px] uppercase tracking-[3px] disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 Generate Proof
