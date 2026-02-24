@@ -8,7 +8,8 @@ import { useWallet } from '../context/WalletContext';
 import { getFieldsByIdType } from "../utils/schema";
 import { predicateInfo } from "../utils/schema";
 import { generateBbsProof } from "../utils/bbsProof";
-import { getAllSchemaFields } from "../utils/schema"
+import { getAllSchemaFields } from "../utils/schema";
+import { QRCodeCanvas } from "qrcode.react"
 
 const Verifier = () => {
   const { credentials, setActiveTab } = useWallet();
@@ -27,6 +28,8 @@ const Verifier = () => {
   const allFields = getAllSchemaFields()
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredFields, setFilteredFields] = useState(allFields)
+  const [qrLink, setQrLink] = useState(null)
+  const [loadingQR, setLoadingQR] = useState(false)
 
   // --- Button Handlers ---
   const handleGenerateProofClick = () => {
@@ -152,6 +155,53 @@ const Verifier = () => {
       console.error("BBS ERROR:", err)
       addLog("Proof generation failed ❌", "error")
       addLog(err.message || "Unknown error")
+    }
+  }
+
+  const startVerification = async () => {
+    try {
+      setLoadingQR(true)
+
+      // Convert selections → schema format
+      const requested_attributes = []
+      const requested_predicates = []
+
+      verifierSelections.forEach((item) => {
+        const [name, pred] = item.split(":")
+
+        if (pred === "reveal") {
+          requested_attributes.push({
+            name,
+            predicate: "reveal"
+          })
+        } else {
+          requested_predicates.push({
+            name,
+            predicate: pred,
+            ...(predicateInputs[item] && { value: predicateInputs[item] })
+          })
+        }
+      })
+
+      const res = await fetch("http://localhost:3001/create-proof-request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          requested_attributes,
+          requested_predicates
+        })
+      })
+
+      const data = await res.json()
+
+      setQrLink(data.request_url)
+
+    } catch (err) {
+      console.error("Failed to start verification", err)
+    } finally {
+      setLoadingQR(false)
     }
   }
 
@@ -389,8 +439,22 @@ const Verifier = () => {
           </motion.div>
         )}
 
-        {/* STEP 4: UNIVERSAL VERIFIER */}
+        
+          {/* STEP 4: UNIVERSAL VERIFIER */ }
         {step === 4 && (
+          qrLink ? (
+          <div className="flex flex-col items-center justify-center p-10">
+            <h3 className="text-white font-black mb-6">
+              Scan to Verify
+            </h3>
+
+            <QRCodeCanvas value={qrLink} size={260} />
+
+            <p className="text-slate-400 text-xs mt-4">
+              Waiting for wallet...
+            </p>
+          </div>
+        ) : (
           <motion.div
             key="step4"
             initial={{ opacity: 0, x: 20 }}
@@ -521,6 +585,7 @@ const Verifier = () => {
               </div>
 
               <button
+                onClick={startVerification}
                 disabled={!isVerifyValid}
                 className="w-full py-4 bg-orange-600 rounded-xl font-black text-white text-[10px] uppercase tracking-[3px] disabled:opacity-30 disabled:cursor-not-allowed"
               >
@@ -529,8 +594,8 @@ const Verifier = () => {
 
             </div>
           </motion.div>
-        )}
-
+        )
+      )}
       </AnimatePresence>
     </div>
   );
