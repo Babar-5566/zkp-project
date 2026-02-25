@@ -26,9 +26,10 @@ function buildBbsProofRequest({
   requested_predicates = [],
   nonce
 }) {
+  const id = generateId();
   return {
     version: "1.0",
-    id: generateId(),
+    id,
     type: "BbsProofRequest",
     credential_type: "identity_credential",
     issuer_pubkey: process.env.ISSUER_PUBLIC_KEY_PATH,
@@ -41,7 +42,7 @@ function buildBbsProofRequest({
       circuit_id: "age_check_v1",
       verification_key_id: "vk_01"
     },
-    response_uri: process.env.DEFAULT_RESPONSE_URI,
+    response_uri: `http://localhost:3001/request?id=${id}`,
     expires_at: expiry(300)
   };
 }
@@ -52,7 +53,7 @@ app.get("/nonce", (req, res) => {
   res.json({ nonce });
 });
 
-app.post("/proof-request", (req, res) => {
+app.post("/create-proof-request", (req, res) => {
   try {
     const { requested_attributes = [], requested_predicates = [] } = req.body;
     const nonce = generateId();
@@ -63,17 +64,18 @@ app.post("/proof-request", (req, res) => {
       requested_predicates,
       nonce
     });
-
     res.json({
       response_uri: proofRequest.response_uri,
       proof_request: proofRequest
     });
   } catch (err) {
+    console.log(err);
+    
     res.status(500).json({ error: "Failed to build proof request" });
   }
 });
 
-app.post("/create-proof-request", (req, res) => {
+app.post("/create-proof-request-mock", (req, res) => {
   const id = uuidv4();
 
   requests[id] = {
@@ -95,7 +97,7 @@ app.get("/request", (req, res) => {
     version: "1.0",
     id,
     ...requests[id].policy,
-    nonce: "mock-nonce",
+    nonce: "mock-nonce-1",
     context: "Default"
   });
 });

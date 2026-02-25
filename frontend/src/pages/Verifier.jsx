@@ -165,15 +165,16 @@ const Verifier = () => {
 
   const startVerification = async () => {
     try {
+      
       setLoadingQR(true)
-
+      
       // Convert selections → schema format
       const requested_attributes = []
       const requested_predicates = []
-
+      
       verifierSelections.forEach((item) => {
         const [name, pred] = item.split(":")
-
+        
         if (pred === "reveal") {
           requested_attributes.push({
             name,
@@ -187,7 +188,7 @@ const Verifier = () => {
           })
         }
       })
-
+      
       const res = await fetch("http://localhost:3001/create-proof-request", {
         method: "POST",
         headers: {
@@ -198,10 +199,11 @@ const Verifier = () => {
           requested_predicates
         })
       })
-
+      
       const data = await res.json()
+      console.log(data);
 
-      setQrLink(data.request_url)
+      setQrLink(data.response_uri)
 
     } catch (err) {
       console.error("Failed to start verification", err)
