@@ -1,0 +1,7 @@
+{
+  "id": "revocation-list-1",
+  "revokedIndices": [
+    1
+  ],
+  "nextIndex": 45
+}
