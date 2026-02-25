@@ -9,7 +9,8 @@ import { getFieldsByIdType } from "../utils/schema";
 import { predicateInfo } from "../utils/schema";
 import { generateBbsProof } from "../utils/bbsProof";
 import { getAllSchemaFields } from "../utils/schema";
-import { QRCodeCanvas } from "qrcode.react"
+import { QRCodeCanvas } from "qrcode.react";
+import ScannerPage from './ScannerPage';
 
 const Verifier = () => {
   const { credentials, setActiveTab } = useWallet();
@@ -31,6 +32,10 @@ const Verifier = () => {
   const [qrLink, setQrLink] = useState(null)
   const [loadingQR, setLoadingQR] = useState(false)
 
+  // Scanner States
+  const [scannedProofData, setScannedProofData] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
+  
   // --- Button Handlers ---
   const handleGenerateProofClick = () => {
     setStep(1); // start your multi-step animated flow
@@ -254,6 +259,60 @@ const Verifier = () => {
         </motion.button>
 
       </div>
+
+            {/* --- QR SCANNER TOGGLE & UI (ONLY VISIBLE IN GENERATE PROOF FLOW) --- */}
+      <AnimatePresence>
+        {(step === 1 || step === 2) && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-6"
+          >
+            <motion.button
+              whileHover={{ scale: 1.02, backgroundColor: "#0f172a" }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowScanner(!showScanner)}
+              className={`w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-[3px] shadow-lg border transition-all ${
+                showScanner 
+                  ? "bg-slate-800 border-red-500/50 text-red-400 hover:bg-slate-700" 
+                  : "bg-slate-900 border-cyan-500/30 text-cyan-400 hover:bg-slate-800"
+              }`}
+            >
+              {showScanner ? "Close Scanner" : "Scan QR Code"}
+            </motion.button>
+
+            <AnimatePresence>
+              {showScanner && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden mt-4"
+                >
+                  <div className="bg-[#020617] p-4 rounded-xl border border-cyan-500/30 flex justify-center flex-col items-center">
+                    <ScannerPage 
+                      onScanSuccess={(data) => {
+                        setScannedProofData(data);
+                        setShowScanner(false); // Close automatically after scanning
+                        alert("QR Code Scanned Successfully!\nData: " + data);
+                      }} 
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Display Scanned Data if available */}
+            {scannedProofData && !showScanner && (
+              <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded text-emerald-400 text-xs text-center break-all w-full">
+                <strong>Scanned Request:</strong> {scannedProofData}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* ------------------------------------------------------------------- */}
 
       <AnimatePresence mode="wait">
 
