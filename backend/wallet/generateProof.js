@@ -1,119 +1,79 @@
 const { v4: uuidv4 } = require("uuid");
 const { getLatestCredential } = require("./credentialStore");
-
-/* Placeholder for real BBS+ verification */
-async function verifyBbsSignature(credential) {
-    // TODO: replace with real BBS+ verify call
-    // Example future call:
-    // return await bbs.verify({ publicKey, signature, messages });
-
-    return credential.signature ? true : false;
-}
+const { blsCreateProof } = require("@mattrglobal/bbs-signatures");
+const snarkjs = require("snarkjs");
+const path = require("path");
 
 function calculateAge(dobString) {
-    if (!dobString) return null;
-
     const dob = new Date(dobString);
     const today = new Date();
-
     let age = today.getFullYear() - dob.getFullYear();
     const m = today.getMonth() - dob.getMonth();
-
-    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-        age--;
-    }
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
     return age;
 }
 
-const docAttributes = {
-    Aadhaar: [
-        "fullName", "dob", "gender", "address", "photoVerified",
-        "aadhaarLast4", "issuer", "issuanceDate", "documentAuthVerified"
-    ],
-    PAN: [
-        "fullName", "guardianName", "dob", "panID",
-        "issuer", "issuanceDate", "documentAuthVerified"
-    ],
-    Passport: [
-        "fullName", "dob", "passportID", "nationality",
-        "expiryDate", "issuer", "documentAuthVerified"
-    ],
-    DrivingLicense: [
-        "fullName", "dob", "licenseID", "issueDate",
-        "expiryDate", "issuer", "documentAuthVerified"
-    ],
-    BirthCertificate: [
-        "fullName", "dob", "placeOfBirth", "fatherName",
-        "motherName", "issuer", "issuanceDate", "documentAuthVerified"
-    ],
-    "12thMarksheet": ["fullName", "dob", "school", "board", "marks", "rollNumber", "issuer", "issuanceDate"],
-    "12thAdmit": ["fullName", "dob", "school", "board", "rollNumber", "issuer", "issuanceDate"],
-    "10thMarksheet": ["fullName", "dob", "school", "board", "marks", "rollNumber", "issuer", "issuanceDate"],
-    "10thAdmit": ["fullName", "dob", "school", "board", "rollNumber", "issuer", "issuanceDate"]
-};
+async function generateProof(documentType, requestedAttributes, rangeChecks = []) {
 
-/**
- * Generate selective disclosure proof for requested attributes
- * @param {String} documentType - type of credential (Aadhaar, PAN, etc.)
- * @param {Array<String>} requestedAttributes - list of attributes to prove
- * @returns proof object
- */
-
-async function generateProof(documentType, requestedAttributes) {
     const cred = getLatestCredential(documentType);
+    if (!cred) throw new Error(`No credential stored for ${documentType}`);
 
-    if (!cred) {
-        throw new Error(`No credential of type ${documentType} stored in wallet`);
-    }
+    // Canonicalize attributes alphabetically (must match issuer)
+    const attrs = Object.keys(cred).filter(k => typeof cred[k] !== "object");
+    const sortedAttrs = attrs.sort();
 
-    const validAttrs = docAttributes[documentType];
-    if (!validAttrs) {
-        throw new Error(`Unknown document type: ${documentType}`);
-    }
-
-    // Validate requested attributes
-    const attrsToReveal = requestedAttributes.filter(attr => validAttrs.includes(attr));
-    if (attrsToReveal.length === 0) {
-        throw new Error("No valid attributes requested for proof");
-    }
-
-    // Convert attribute values to messages (Uint8Array)
-    const messages = attrsToReveal.map(attr => {
-        const value = cred[attr];
-        if (value === undefined || value === null) {
-            throw new Error(`Attribute ${attr} missing in credential`);
-        }
-        return new TextEncoder().encode(`${attr}:${value}`);
+    const allMessages = sortedAttrs.map(attr => {
+        return new TextEncoder().encode(`${attr}:${cred[attr]}`);
     });
 
-    // Context ensures proof cannot be used in other domains
-    const context = new TextEncoder().encode(documentType);
+    const revealIndices = requestedAttributes
+        .map(attr => sortedAttrs.indexOf(attr))
+        .filter(i => i >= 0);
 
-    // Generate BBS+ selective disclosure proof
-    const proofBytes = await createProof({
-        signature: cred.signature instanceof Buffer ? cred.signature : Buffer.from(cred.signature, "base64"),
-        publicKey: Buffer.from(cred.publicKey, "base64"),
-        messages,
-        revealed: messages.map((_, i) => i),
-        context
-    });
+    if (!revealIndices.length) throw new Error("No valid attributes to reveal");
 
-    // UUID nonce for unlinkability
     const nonce = uuidv4();
+
+    const proofBytes = await blsCreateProof({
+        signature: Buffer.from(cred.proof.signature, "base64"),
+        publicKey: Buffer.from(cred.publicKey, "base64"),
+        messages: allMessages,
+        revealed: revealIndices,
+        context: new TextEncoder().encode(documentType),
+        nonce: new TextEncoder().encode(nonce)
+    });
+
+    let zkProofs = {};
+
+    for (const check of rangeChecks) {
+        if (check.attribute === "age") {
+
+            const age = calculateAge(cred.dob);
+
+            const wasmPath = path.join(__dirname, "../circuits/ageCheck_js/ageCheck.wasm");
+            const zkeyPath = path.join(__dirname, "../circuits/ageCheck_js/ageCheck_final.zkey");
+
+            const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+                { age, threshold: check.threshold },
+                wasmPath,
+                zkeyPath
+            );
+
+            zkProofs.ageProof = { proof, publicSignals };
+        }
+    }
 
     return {
         documentType,
-        revealedAttributes: attrsToReveal.reduce((obj, key) => {
-            obj[key] = cred[key];
-            return obj;
-        }, {}),
-        proof: Buffer.from(proofBytes).toString("base64"),
         nonce,
-        credentialHash: cred.credentialHash,
+        revealedAttributes: requestedAttributes.reduce((o, k) => {
+            o[k] = cred[k];
+            return o;
+        }, {}),
+        bbsProof: Buffer.from(proofBytes).toString("base64"),
+        zkProofs,
         issuer: cred.issuer
     };
 }
 
-module.exports = {
-    generateProof
-};
+module.exports = { generateProof };
