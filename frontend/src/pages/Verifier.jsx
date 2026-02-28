@@ -2,13 +2,25 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, Fingerprint, Lock, ChevronRight, CheckSquare, Square,
-  Play, Server, RefreshCw, Code, ChevronLeft
+  Play, Server, RefreshCw, Code, ChevronLeft,
+  ShieldCheck // 🚀 NEW LINE ADDED: Added ShieldCheck for our new UI
 } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { getFieldsByIdType } from "../utils/schema";
 import { predicateInfo } from "../utils/schema";
 import { generateBbsProof } from "../utils/bbsProof";
+<<<<<<< Updated upstream
 import { getAllSchemaFields } from "../utils/schema"
+=======
+import { getAllSchemaFields } from "../utils/schema";
+import { QRCodeCanvas } from "qrcode.react";
+import ScannerPage from './ScannerPage';
+
+// 🚀 NEW BLOCK ADDED HERE: Importing our API service
+import apiService from '../api/apiService';
+import CredentialSelectorModal from "../components/CredentialSelectorModal";
+import VerificationResults from "../components/VerificationResults";
+>>>>>>> Stashed changes
 
 const Verifier = () => {
   const { credentials, setActiveTab } = useWallet();
@@ -27,6 +39,24 @@ const Verifier = () => {
   const allFields = getAllSchemaFields()
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredFields, setFilteredFields] = useState(allFields)
+<<<<<<< Updated upstream
+=======
+  const [qrLink, setQrLink] = useState(null)
+  const [loadingQR, setLoadingQR] = useState(false)
+  // --- Missing states restored after merge ---
+  const [proofRequest, setProofRequest] = useState(null);
+  const [autoFlow, setAutoFlow] = useState(false);
+
+  const [showSelector, setShowSelector] = useState(false);
+  const [requestForModal, setRequestForModal] = useState(null);
+  const [mapping, setMapping] = useState(null);
+
+  const [activeRequestId, setActiveRequestId] = useState(null);
+
+  // Scanner States
+  const [scannedProofData, setScannedProofData] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
+>>>>>>> Stashed changes
 
   // --- Button Handlers ---
   const handleGenerateProofClick = () => {
@@ -104,15 +134,16 @@ const Verifier = () => {
   }
 
   const startGeneration = async () => {
-    setStep(3)
-    setLogs([])
-    setStatus('idle')
-    setShowRawProof(false)
+    setStep(3);
+    setLogs([]);
+    setStatus("idle");
+    setShowRawProof(false);
 
     const addLog = (msg, type) =>
-      setLogs(prev => [...prev, { msg, type }])
+      setLogs(prev => [...prev, { msg, type }]);
 
     try {
+<<<<<<< Updated upstream
       addLog("Loading credential from wallet...")
       await new Promise(r => setTimeout(r, 600))
 
@@ -125,11 +156,25 @@ const Verifier = () => {
 
       const predicates = buildPredicatesFromUI()
       // const predicates = selectedPredicates // your UI state
+=======
+      const vc = selectedCard;
+      // 🔥 AUTO BUILD MAPPING FROM SELECTED VC
+      const autoMapping = {};
+      Object.keys(vc.credentialSubject || {}).forEach(attr => {
+        autoMapping[attr] = vc;
+      });
+      if (!vc) throw new Error("No credential selected");
 
+      addLog("Loading credential from wallet...");
+      await new Promise(r => setTimeout(r, 400));
+>>>>>>> Stashed changes
+
+      const predicates = buildPredicatesFromUI();
       if (!predicates.length) {
-        throw new Error("No attributes selected for proof")
+        throw new Error("No attributes selected for proof");
       }
 
+<<<<<<< Updated upstream
       console.log(predicates);
 
       addLog("Preparing BBS proof request...")
@@ -140,20 +185,71 @@ const Verifier = () => {
         vc,
         predicates
       })
+=======
+      let proof;
 
-      await new Promise(r => setTimeout(r, 800))
+      // =====================================================
+      // 🔁 MODE 1 — RESPONSE TO VERIFIER REQUEST (Flow B)
+      // =====================================================
+      if (proofRequest) {
+        addLog("Generating proof for verifier request...");
+>>>>>>> Stashed changes
 
-      addLog("Proof generated successfully ✅", "success")
+        proof = await generateBbsProof({
+          mapping: autoMapping,
+          request: proofRequest.proofRequest ?? proofRequest
+        });
 
-      setProofData(proof)
-      setStatus('success')
+        await fetch(
+          (proofRequest.proofRequest ?? proofRequest).response_uri,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: proofRequest.id,
+              nonce: proofRequest.nonce,
+              proofs: proof
+            })
+          }
+        );
+
+        addLog("Proof sent to verifier 📡", "success");
+      }
+
+      // =====================================================
+      // 🔵 MODE 2 — HOLDER STANDALONE PROOF (Flow A)
+      // =====================================================
+      else {
+        addLog("Generating standalone holder proof...");
+
+        proof = await generateBbsProof({
+          mapping,
+          request: {
+            nonce: btoa("standalone-proof"),
+            requested_predicates: [],
+            requested_attributes: []
+          }
+        });
+
+        const qrPayload = JSON.stringify({
+          type: "holder-proof",
+          proof
+        });
+
+        setQrLink(`data:text/plain;base64,${btoa(qrPayload)}`);
+
+        addLog("Proof generated & QR ready 📱", "success");
+      }
+
+      setProofData(proof);
+      setStatus("success");
 
     } catch (err) {
-      console.error("BBS ERROR:", err)
-      addLog("Proof generation failed ❌", "error")
-      addLog(err.message || "Unknown error")
+      console.error("Proof generation failed:", err);
+      addLog("Proof generation failed ❌", "error");
+      addLog(err.message || "Unknown error");
     }
-  }
+  };
 
   // --- EMPTY STATE (FIXED NAVIGATION) ---
   if (!credentials || credentials.length === 0) {
@@ -205,6 +301,83 @@ const Verifier = () => {
 
       </div>
 
+<<<<<<< Updated upstream
+=======
+      {/* --- QR SCANNER TOGGLE & UI (ONLY VISIBLE IN GENERATE PROOF FLOW) --- */}
+      <AnimatePresence>
+        {(step === 1 || step === 2) && credentials && credentials.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-6"
+          >
+            <motion.button
+              whileHover={{ scale: 1.02, backgroundColor: "#0f172a" }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowScanner(!showScanner)}
+              className={`w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-[3px] shadow-lg border transition-all ${showScanner
+                ? "bg-slate-800 border-red-500/50 text-red-400 hover:bg-slate-700"
+                : "bg-slate-900 border-cyan-500/30 text-cyan-400 hover:bg-slate-800"
+                }`}
+            >
+              {showScanner ? "Close Scanner" : "Scan QR Code"}
+            </motion.button>
+
+            <AnimatePresence>
+              {showScanner && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden mt-4"
+                >
+                  <div className="bg-[#020617] p-4 rounded-xl border border-cyan-500/30 flex justify-center flex-col items-center">
+                    <ScannerPage
+                      onScanSuccess={async (url) => {
+                        try {
+                          setShowScanner(false)
+
+                          // Convert /request/<id> → /request?id=<id>
+                          let safeUrl = url
+                          if (url.includes("/request/")) {
+                            const id = url.split("/request/")[1]
+                            safeUrl = `http://localhost:3001/request?id=${id}`
+                          }
+
+                          console.log("Fetching safe request URL:", safeUrl)
+
+                          const res = await fetch(safeUrl)
+                          const request = await res.json()
+
+                          console.log("Proof request:", request)
+
+                          setProofRequest(request)
+                          setRequestForModal(request.proofRequest ?? request)
+                          setShowSelector(true)
+
+                        } catch (err) {
+                          console.error("Failed to load proof request", err)
+                        }
+                      }}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Display Scanned Data if available */}
+            {scannedProofData && !showScanner && (
+              <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded text-emerald-400 text-xs text-center break-all w-full">
+                <strong>Scanned Request:</strong> {scannedProofData}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* ------------------------------------------------------------------- */}
+
+>>>>>>> Stashed changes
       <AnimatePresence mode="wait">
 
         {/* STEP 1: SELECT */}

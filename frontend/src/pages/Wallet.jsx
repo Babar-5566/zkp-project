@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import { Fingerprint, Trash2, ShieldAlert, ArrowRight, Zap, AlertTriangle } from 'lucide-react';
+// 🚀 NEW: Added 'Loader2' to the import list from lucide-react
+import { Fingerprint, Trash2, ShieldAlert, ArrowRight, Zap, AlertTriangle, Loader2 } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { getFieldsByIdType } from "../utils/schema";
+
+// 🚀 NEW BLOCK ADDED HERE: Importing our API service
+import apiService from '../api/apiService'; 
 
 // const fields = getFieldsByIdType(card.idType);
 
@@ -11,6 +15,37 @@ const Wallet = () => {
   const [deletingId, setDeletingId] = useState(null); // 'ALL' or specific ID
 
   const [expandedCardId, setExpandedCardId] = useState(null);
+
+  // =========================================================
+  // 🚀 NEW BLOCK ADDED HERE: ZK-SNARK Proof Generation Logic
+  // =========================================================
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [activeCardId, setActiveCardId] = useState(null); // To track which card is loading
+
+  const handleGenerateProof = async (card) => {
+    try {
+      setIsGenerating(true);
+      setActiveCardId(card.id);
+      console.log("Initiating ZK Proof Generation for:", card?.credentialSubject?.idType);
+      
+      // Call the Wallet Backend (Port 5051)
+      const proofData = await apiService.generateAgeProof(card?.credentialSubject?.idType || "Aadhaar Card", 18);
+      
+      // Save the generated proof to localStorage so the Verifier page can access it
+      localStorage.setItem('currentZkProof', JSON.stringify(proofData));
+      console.log("✅ Proof generated successfully and saved to localStorage!");
+      
+      // Move to the Verifier tab
+      setActiveTab("verifier");
+    } catch (error) {
+      console.error("❌ Failed to generate proof:", error);
+      alert("Error generating proof. Is your Wallet Server (Port 5051) running?");
+    } finally {
+      setIsGenerating(false);
+      setActiveCardId(null);
+    }
+  };
+  // =========================================================
 
   // Delete Logic
   const confirmDelete = () => {
@@ -141,12 +176,23 @@ const Wallet = () => {
 
                 {/* Generate proof button */}
                 <button
-                  onClick={() => setActiveTab("verifier")}
-                  className="w-full mt-4 py-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-800"
+                  // 🚀 OLD CODE COMMENTED OUT TO PRESERVE HISTORY:
+                  // onClick={() => setActiveTab("verifier")} 
+                  // 🚀 NEW CODE ADDED:
+                  onClick={() => handleGenerateProof(card)}
+                  disabled={isGenerating && activeCardId === card.id}
+                  className={`w-full mt-4 py-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center gap-2 transition-all ${isGenerating && activeCardId === card.id ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-800'}`}
                 >
-                  <Zap size={14} className="text-cyan-400" fill="currentColor" />
+                  {/* 🚀 NEW: Loading Logic for the icon */}
+                  {isGenerating && activeCardId === card.id ? (
+                    <Loader2 size={14} className="text-cyan-400 animate-spin" />
+                  ) : (
+                    <Zap size={14} className="text-cyan-400" fill="currentColor" />
+                  )}
+                  
                   <span className="text-[10px] font-black text-white uppercase tracking-widest">
-                    Generate Proof
+                    {/* 🚀 NEW: Loading Logic for the text */}
+                    {isGenerating && activeCardId === card.id ? "Generating ZK Proof..." : "Generate Proof"}
                   </span>
                 </button>
               </motion.div>

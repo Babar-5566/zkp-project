@@ -8,6 +8,9 @@ import { useWallet } from '../context/WalletContext';
 import { getFieldsByIdType, ID_TYPES, COUNTRIES, BOARDS, UNIVERSITIES } from '../utils/schema';
 // import {  } from '../context/WalletContext';
 
+// 🚀 NEW LINE ADDED HERE: Importing our API service
+import apiService from '../api/apiService'; 
+
 const Issuer = () => {
   const { formData, setFormData, issueCredential, setActiveTab, isDocIssuedAndSigned, getInitialFormData } = useWallet();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -159,6 +162,31 @@ const Issuer = () => {
 
     // --- Now call backend ---
     setIsSubmitting(true);
+
+  // =========================================================
+    // 🚀 NEW BLOCK ADDED HERE: Calling our Wallet API (Port 5051)
+    // =========================================================
+    try {
+      const payload = {
+        idType: formData.idType, 
+        documentType: formData.idType, // 
+        ...formData,
+        issuer: "Govt. of India",
+        authenticityFlag: true
+      };
+      console.log("Saving to Wallet API (Port 5051)...", payload);
+      
+      const apiRes = await apiService.storeAadhaar(payload);
+      console.log("Successfully stored in Wallet Backend:", apiRes);
+    } catch (error) {
+      console.error("Failed to store credential in backend:", error);
+      // ...
+      alert("Backend Error: Could not save to Wallet Server!");
+      setIsSubmitting(false);
+      return; // Stop the process if backend fails
+    }
+    // =========================================================
+
     await issueCredential(); // async, handles loading & tab switch internally
     setIsSubmitting(false);
 

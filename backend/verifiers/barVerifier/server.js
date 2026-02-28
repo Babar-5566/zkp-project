@@ -1,10 +1,16 @@
 const express = require("express");
+<<<<<<< Updated upstream
 const crypto = require("crypto");
 require("dotenv").config();
 
+=======
+const cors = require("cors");
+>>>>>>> Stashed changes
 const { verifyProof } = require("./verifyProof");
+const { v4: uuidv4 } = require("uuid");
 
 const app = express();
+<<<<<<< Updated upstream
 app.use(express.json());
 
 /* ---------------- NONCE STORE ---------------- */
@@ -58,12 +64,32 @@ function buildBbsProofRequest({
 /* ---------------- ROUTES ---------------- */
 
 // 🔹 Get a fresh nonce
+=======
+app.use(cors());
+app.use(express.json());
+app.get("/", (req, res) => {
+  res.send("Verifier backend running");
+});
+const fs = require("fs");
+const path = require("path");
+
+/* ---------------- STORAGE ---------------- */
+
+const nonces = {};
+const proofRequests = {};
+const receivedProofs = {};
+
+/* ---------------- ROUTES ---------------- */
+
+/* ✔ NONCE ROUTE (used by BBS proof generation) */
+>>>>>>> Stashed changes
 app.get("/nonce", (req, res) => {
-  const nonce = generateId();
-  nonces[nonce] = expiry(300);
+  const nonce = uuidv4();
+  nonces[nonce] = true;
   res.json({ nonce });
 });
 
+<<<<<<< Updated upstream
 // 🔹 Build proof request
 app.post("/proof-request", (req, res) => {
   try {
@@ -119,12 +145,88 @@ app.post("/verify", async (req, res) => {
 
   } catch (err) {
     console.error(err);
+=======
+/* ✔ CREATE PROOF REQUEST (Verifier → Holder QR) */
+app.post("/create-proof-request", (req, res) => {
+  try {
+    const id = uuidv4();
+
+    const request = {
+      id,
+      nonce: uuidv4(),
+      response_uri: "http://localhost:3001/submit-proof",
+      requested_attributes: req.body.requested_attributes || [],
+      requested_predicates: req.body.requested_predicates || []
+    };
+
+    proofRequests[id] = request;
+
+    const request_uri = `http://localhost:3001/request/${id}`;
+
+    res.json({
+      id,
+      request_uri
+    });
+
+  } catch (err) {
+    console.error("create-proof-request error:", err);
+    res.status(500).json({ error: "Failed to create proof request" });
+  }
+});
+
+/* ✔ HOLDER SCANS THIS QR */
+app.get("/request/:id", (req, res) => {
+  const request = proofRequests[req.params.id];
+  if (!request) return res.status(404).json({ error: "Request not found" });
+
+  res.json(request);
+});
+
+/* ✔ HOLDER SENDS PROOF HERE */
+app.post("/submit-proof", async (req, res) => {
+  try {
+    const { id, proofs } = req.body;
+
+    if (!id || !proofs) {
+      return res.status(400).json({ error: "Missing proof or id" });
+    }
+
+    const request = proofRequests[id];
+    if (!request) {
+      return res.status(404).json({ error: "Unknown request id" });
+    }
+
+    const result = await verifyProof(proofs);
+
+    receivedProofs[id] = result;
+
+    res.json({ status: "received" });
+
+  } catch (err) {
+    console.error("submit-proof error:", err);
+>>>>>>> Stashed changes
     res.status(500).json({ error: "Verification failed" });
   }
 });
 
+<<<<<<< Updated upstream
 /* ---------------- START SERVER ---------------- */
 
 app.listen(3003, () => {
   console.log("ZKP Verifier running on port 3003");
 });
+=======
+/* ✔ VERIFIER FRONTEND POLLS RESULT */
+app.get("/verification-result/:id", (req, res) => {
+  const result = receivedProofs[req.params.id];
+  if (!result) return res.json({ status: "pending" });
+
+  res.json(result);
+});
+
+/* ---------------- START SERVER ---------------- */
+
+app.listen(3001, () => {
+  console.log("Verifier server running on port 3001");
+});
+>>>>>>> Stashed changes

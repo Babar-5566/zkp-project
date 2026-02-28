@@ -5,11 +5,31 @@ import { blsCreateProof } from "@mattrglobal/bbs-signatures";
  * Convert a base64 string to Uint8Array safely.
  * Removes whitespace/newlines for browser compatibility.
  */
+<<<<<<< Updated upstream
 export function base64ToUint8Array(base64) {
     if (!base64) throw new Error("Empty input");
     base64 = base64.replace(/\s+/g, ""); // remove newlines/whitespace
     const binary = atob(base64);
     return Uint8Array.from([...binary].map(c => c.charCodeAt(0)));
+=======
+export function base64ToUint8Array(input) {
+  if (!input) throw new Error("Empty input")
+
+  // Already Uint8Array
+  if (input instanceof Uint8Array) return input
+
+  // Already Buffer-like array
+  if (Array.isArray(input)) return Uint8Array.from(input)
+
+  // Try base64 decode
+  try {
+    const clean = String(input).replace(/\s+/g, "")
+    const binary = atob(clean)
+    return Uint8Array.from([...binary].map(c => c.charCodeAt(0)))
+  } catch {
+    throw new Error("Invalid base64 signature/publicKey from issuer")
+  }
+>>>>>>> Stashed changes
 }
 
 /**

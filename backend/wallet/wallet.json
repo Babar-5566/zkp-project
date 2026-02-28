@@ -1,3 +1,139 @@
 {
+<<<<<<< Updated upstream
   "credentials": []
+=======
+  "credentials": [
+    {
+      "idType": "Aadhaar Card",
+      "fullName": "pintu pal ",
+      "dob": "17/02/2026",
+      "issuer": "Govt. of India",
+      "authenticityFlag": true,
+      "signature": null,
+      "documentType": "Aadhaar Card",
+      "credentialHash": "8d4fe87bffedcf3dc3c21128781adbfa03d98c1ea5dda2450b2066425ffadcdb",
+      "storedAt": 1772210290215
+    },
+    {
+      "idType": "Aadhaar Card",
+      "fullName": "pintu pal ",
+      "dob": "27/02/2009",
+      "gender": "Male",
+      "address": "kolkata",
+      "photoVerified": "Yes",
+      "issuer": "Govt. of India",
+      "authenticityFlag": true,
+      "signature": null,
+      "documentType": "Aadhaar Card",
+      "credentialHash": "5fd70f7b34ad6c7a050012b3709045d6f7dd3da958c20ae1d7edbefdfbdd51de",
+      "storedAt": 1772216390102
+    },
+    {
+      "idType": "Aadhaar Card",
+      "fullName": "pintu pal ",
+      "dob": "17/02/2026",
+      "issuer": "Govt. of India",
+      "authenticityFlag": true,
+      "signature": null,
+      "documentType": "Aadhaar Card",
+      "credentialHash": "8d4fe87bffedcf3dc3c21128781adbfa03d98c1ea5dda2450b2066425ffadcdb",
+      "storedAt": 1772217050025
+    },
+    {
+      "idType": "Aadhaar Card",
+      "documentType": "Aadhaar Card",
+      "fullName": "pintu pal ",
+      "aadhaarNumber": "123456789456",
+      "dob": "27/02/2009",
+      "address": "kolkata",
+      "photoVerified": "Yes",
+      "gender": "Male",
+      "issuer": "Govt. of India",
+      "authenticityFlag": true,
+      "signature": null,
+      "credentialHash": "54fc1884c9f639a2cf57a4dbb0cb25f51c9007947854857ee53a0d9fe2397655",
+      "storedAt": 1772218740408
+    },
+    {
+      "idType": "PAN Card",
+      "documentType": "PAN Card",
+      "fullName": "pintu pal ",
+      "panID": "ABCDE1234G",
+      "guardianName": "abdbahbs ",
+      "dob": "17/02/2026",
+      "issuer": "Govt. of India",
+      "authenticityFlag": true,
+      "signature": null,
+      "credentialHash": "a0c187cf6ccc5e96d06f24e0269b2055cba6f0927749ceb8cb3e824bbd0d9f35",
+      "storedAt": 1772218752133
+    },
+    {
+      "idType": "Passport",
+      "documentType": "Passport",
+      "dob": "04/02/1993",
+      "expiryDate": "13/02/2029",
+      "passportID": "A1234567",
+      "fullName": "pintu pal ",
+      "issuer": "Govt. of India",
+      "authenticityFlag": true,
+      "signature": null,
+      "credentialHash": "a3cceb3b477878433f18bdb922819009cf46378393262e3eff4b0e88779fb40f",
+      "storedAt": 1772218786063
+    },
+    {
+      "idType": "PAN Card",
+      "documentType": "PAN Card",
+      "fullName": "pintu pal ",
+      "panID": "ABCDE1234G",
+      "guardianName": "abdbahbs ",
+      "dob": "17/02/2026",
+      "issuer": "Govt. of India",
+      "authenticityFlag": true,
+      "signature": null,
+      "credentialHash": "a0c187cf6ccc5e96d06f24e0269b2055cba6f0927749ceb8cb3e824bbd0d9f35",
+      "storedAt": 1772218850051
+    },
+    {
+      "idType": "Passport",
+      "documentType": "Passport",
+      "fullName": "pintu pal ",
+      "passportID": "A1234567",
+      "dob": "08/02/1956",
+      "expiryDate": "14/02/2029",
+      "issuer": "Govt. of India",
+      "authenticityFlag": true,
+      "signature": null,
+      "credentialHash": "0bfa0956cd4402ec2993ecc5d2b320bb5d034dd2b46e2233135560af725be5f0",
+      "storedAt": 1772218881255
+    },
+    {
+      "idType": "Driving Licence",
+      "documentType": "Driving Licence",
+      "dob": "28/02/2026",
+      "issueDate": "22/02/2026",
+      "fullName": "pintu pal ",
+      "licenseID": "DL-12345678912",
+      "expiryDate": "22/02/2026",
+      "issuer": "Govt. of India",
+      "authenticityFlag": true,
+      "signature": null,
+      "credentialHash": "f927915deaf0d90ef561290161347116a67d2e6c6d8d82f54b3039dc693ac7c7",
+      "storedAt": 1772218935588
+    },
+    {
+      "idType": "University Degree",
+      "documentType": "University Degree",
+      "fullName": "kary M",
+      "university": "University of Burdwan",
+      "rollNumber": "24100123105",
+      "passingYear": 2027,
+      "issuer": "Govt. of India",
+      "authenticityFlag": true,
+      "dob": null,
+      "signature": null,
+      "credentialHash": "277f7551126d810d7d61a0a817f0aca6dd89618aad6cfdecbef71aa740c51606",
+      "storedAt": 1772274264893
+    }
+  ]
+>>>>>>> Stashed changes
 }

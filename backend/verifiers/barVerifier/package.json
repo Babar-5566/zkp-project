@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@mattrglobal/bbs-signatures": "^2.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "snarkjs": "^0.7.6",
+    "uuid": "^13.0.0"
+  }
+}
