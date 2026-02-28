@@ -37,7 +37,9 @@ export async function generateBbsProof({ mapping, request, context = "Default" }
       if (!vc || !vc.proof || !vc.proof.signature) {
         throw new Error(`Invalid VC for ${attribute}`)
       }
-
+      
+      console.log(vc);
+      
       const messageBytes = vc.proof.signature.messages.map(attr =>
         new TextEncoder().encode(attr)
       )

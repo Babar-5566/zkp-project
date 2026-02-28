@@ -186,48 +186,6 @@ const Issuer = () => {
     await issueCredential(); // async, handles loading & tab switch internally
     setIsSubmitting(false);
 
-    // const payload = {
-    //   idType: formData.idType,
-    //   data: {
-    //     ...formData,
-    //     issuer: "Govt. of India"
-    //   },
-    // };
-
-
-    // try {
-    //   const response = await fetch("http://localhost:5000/api/issuer/issue", {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json"
-    //     },
-    //     body: JSON.stringify({
-    //       idType: payload.idType,
-    //       data: payload.data
-    //     })
-    //   });
-
-    //   const data = await response.json();
-    //   console.log("Backend response:", data);
-
-    //   if (data && data.id) {
-    //     // Add this issued credential to the wallet
-    //     addCredential(data); // or whatever property backend returns
-    //     setIsSubmitting(false);
-    //     setActiveTab('holder'); // switch tab to see the credential
-    //   } else {
-    //     // Show an error to the user
-    //     alert(data.error || "Failed to issue credential");
-    //   }
-
-    // } catch (error) {
-    //   console.error("Error:", error);
-    // }
-
-    // setTimeout(() => {
-    //   issueCredential();
-    //   setActiveTab('holder');
-    // }, 1500);
   };
 
   // Blur Handler for Roll No
@@ -245,7 +203,7 @@ const Issuer = () => {
     const parts = str.split('/');
     if (parts.length !== 3) return false;
     const [day, month, year] = parts.map(Number);
-    console.log(day, month, year);
+
     // Check numbers are valid
     if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1000 || year > 9999) return false;
 

@@ -56,6 +56,8 @@ async function issueCredential(req, res) {
 
             issuer: issuerDid,
 
+            holderCommitment: data.holderCommitment,
+
             issuanceDate: new Date().toISOString(),
 
             credentialSubject: {
@@ -82,8 +84,7 @@ async function issueCredential(req, res) {
             publicKey: Buffer.from(getKeyPair().publicKey).toString("base64")
         };
 
-        console.log("Converted:", JSON.stringify(verifiableCredential, null, 2));
-        console.log("publicKey:", Buffer.from(getKeyPair().publicKey).toString("base64"));
+        console.log(verifiableCredential);
         
         // 🔥 Send output to frontend
         res.json(verifiableCredential);

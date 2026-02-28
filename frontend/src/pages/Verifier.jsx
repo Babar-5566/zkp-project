@@ -88,6 +88,7 @@ const Verifier = () => {
       )
     )
   }
+
   useEffect(() => {
     if (!proofRequest) return
 
@@ -158,7 +159,10 @@ const Verifier = () => {
     })
 
   const logsEndRef = useRef(null);
-  useEffect(() => { logsEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [logs]);
+
+  useEffect(() => {
+    logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs]);
 
   const buildPredicatesFromUI = () => {
     return disclosedFields.map(field => {
@@ -191,12 +195,26 @@ const Verifier = () => {
         request: proofRequest.proofRequest ?? proofRequest
       })
 
+      // 🔐 Generate nullifier
+      const holderSecret = localStorage.getItem("holderSecret")
+
+      if (!holderSecret) {
+        throw new Error("Holder secret missing")
+      }
+
+      const encoder = new TextEncoder()
+      const data = encoder.encode(holderSecret + proofRequest.id)
+
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data)
+      const hashArray = Array.from(new Uint8Array(hashBuffer))
+      const nullifier = hashArray
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+
       addLog("Proof generated successfully ✅", "success")
 
       setProofData(proof)
       setStatus("success")
-
-      addLog("Proof being sent to verifier 📡")
 
       console.log(proof);
       console.log(proofRequest);
@@ -210,12 +228,13 @@ const Verifier = () => {
           body: JSON.stringify({
             id: proofRequest.id,
             nonce: proofRequest.nonce,
-            proofs: proof
+            proofs: proof,
+            nullifier
           })
         }
       )
 
-      addLog("Proof sent to verifier 📡")
+      addLog("Proof sent to verifier 📡", "success")
 
     } catch (err) {
       console.error(err)
@@ -248,13 +267,10 @@ const Verifier = () => {
       await new Promise(r => setTimeout(r, 600))
 
       const predicates = buildPredicatesFromUI()
-      // const predicates = selectedPredicates // your UI state
 
       if (!predicates.length) {
         throw new Error("No attributes selected for proof")
       }
-
-      console.log(predicates);
 
       addLog("Preparing BBS proof request...")
       await new Promise(r => setTimeout(r, 800))
@@ -330,23 +346,6 @@ const Verifier = () => {
       setLoadingQR(false)
     }
   }
-
-  // --- EMPTY STATE (FIXED NAVIGATION) ---
-  // if (!credentials || credentials.length === 0) {
-  //   return (
-  //     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-[60vh] text-center px-6">
-  //       <Lock size={40} className="text-slate-600 mb-4" />
-  //       <h3 className="text-xl font-black text-white">No Credentials</h3>
-  //       <p className="text-slate-500 text-xs mb-6">Issue an ID first.</p>
-  //       <button
-  //         onClick={() => setActiveTab('issuer')}
-  //         className="px-6 py-3 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-cyan-500/20"
-  //       >
-  //         Go to Issuer
-  //       </button>
-  //     </motion.div>
-  //   );
-  // }
 
   return (
     <div className="max-w-lg mx-auto w-full pb-24 px-4 pt-6">
@@ -813,6 +812,7 @@ const Verifier = () => {
           )
         )}
       </AnimatePresence>
+
       <CredentialSelectorModal
         isOpen={showSelector}
         request={requestForModal}
