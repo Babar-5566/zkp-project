@@ -332,21 +332,21 @@ const Verifier = () => {
   }
 
   // --- EMPTY STATE (FIXED NAVIGATION) ---
-  if (!credentials || credentials.length === 0) {
-    return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-[60vh] text-center px-6">
-        <Lock size={40} className="text-slate-600 mb-4" />
-        <h3 className="text-xl font-black text-white">No Credentials</h3>
-        <p className="text-slate-500 text-xs mb-6">Issue an ID first.</p>
-        <button
-          onClick={() => setActiveTab('issuer')}
-          className="px-6 py-3 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-cyan-500/20"
-        >
-          Go to Issuer
-        </button>
-      </motion.div>
-    );
-  }
+  // if (!credentials || credentials.length === 0) {
+  //   return (
+  //     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-[60vh] text-center px-6">
+  //       <Lock size={40} className="text-slate-600 mb-4" />
+  //       <h3 className="text-xl font-black text-white">No Credentials</h3>
+  //       <p className="text-slate-500 text-xs mb-6">Issue an ID first.</p>
+  //       <button
+  //         onClick={() => setActiveTab('issuer')}
+  //         className="px-6 py-3 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-cyan-500/20"
+  //       >
+  //         Go to Issuer
+  //       </button>
+  //     </motion.div>
+  //   );
+  // }
 
   return (
     <div className="max-w-lg mx-auto w-full pb-24 px-4 pt-6">
@@ -383,7 +383,7 @@ const Verifier = () => {
 
       {/* --- QR SCANNER TOGGLE & UI (ONLY VISIBLE IN GENERATE PROOF FLOW) --- */}
       <AnimatePresence>
-        {(step === 1 || step === 2) && (
+        {(step === 1 || step === 2) && credentials && credentials.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -459,28 +459,52 @@ const Verifier = () => {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-3"
           >
-            {credentials.map((card) => (
-              <div
-                key={card.id}
-                onClick={() => { setSelectedCard(card); setStep(2); }}
-                className="bg-[#0B101B] border border-slate-800 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:border-cyan-500/30"
+            {(!credentials || credentials.length === 0) ? (
+
+              // 🔥 EMPTY STATE ONLY INSIDE STEP 1
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center justify-center h-[40vh] text-center px-6"
               >
-                <div className="flex items-center gap-3">
-                  <div className="bg-slate-900 p-2 rounded text-cyan-400">
-                    <Fingerprint size={18} />
+                <Lock size={40} className="text-slate-600 mb-4" />
+                <h3 className="text-xl font-black text-white">No Credentials</h3>
+                <p className="text-slate-500 text-xs mb-6">
+                  Issue an ID first.
+                </p>
+                <button
+                  onClick={() => setActiveTab('issuer')}
+                  className="px-6 py-3 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-cyan-500/20"
+                >
+                  Go to Issuer
+                </button>
+              </motion.div>
+
+            ) : (
+
+              credentials.map((card) => (
+                <div
+                  key={card.id}
+                  onClick={() => { setSelectedCard(card); setStep(2); }}
+                  className="bg-[#0B101B] border border-slate-800 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:border-cyan-500/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="bg-slate-900 p-2 rounded text-cyan-400">
+                      <Fingerprint size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-white font-bold text-sm">
+                        {card.credentialSubject?.idType || "Unknown Document"}
+                      </h4>
+                      <p className="text-slate-400 text-xs">
+                        {card.credentialSubject?.fullName || "No Name"} • Issued: {new Date(card.issuanceDate).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-white font-bold text-sm">
-                      {card.credentialSubject?.idType || "Unknown Document"}
-                    </h4>
-                    <p className="text-slate-400 text-xs">
-                      {card.credentialSubject?.fullName || "No Name"} • Issued: {new Date(card.issuanceDate).toLocaleDateString()}
-                    </p>
-                  </div>
+                  <ChevronRight size={16} className="text-slate-600" />
                 </div>
-                <ChevronRight size={16} className="text-slate-600" />
-              </div>
-            ))}
+              ))
+            )}
           </motion.div>
         )}
 
