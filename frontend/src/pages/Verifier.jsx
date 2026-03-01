@@ -825,14 +825,6 @@ const Verifier = () => {
                     placeholder="Search attributes..."
                     className="flex-1 bg-slate-800 text-white rounded px-3 py-2 text-sm"
                   />
-
-                  {/* <button
-                  onClick={handleSearch}
-                  className="px-4 py-2 bg-orange-600 rounded font-bold text-white text-xs uppercase"
-                >
-                  Search
-                </button> */}
-                  {/* no need of button, input change will make the search query run automatically as used useEffect */}
                 </div>
 
                 <div className="space-y-4 mb-8">
@@ -899,15 +891,39 @@ const Verifier = () => {
 
                                 {info.requiresInput && (
                                   <input
-                                    type="text"
+                                    type={
+                                      info.inputType === "date"
+                                        ? "date"
+                                        : "text"
+                                    }
                                     value={predicateInputs[selected] || ""}
-                                    onChange={(e) =>
+                                    onChange={(e) => {
+                                      let value = e.target.value
+
+                                      // 🟠 Only apply numeric rule if explicitly numeric
+                                      if (info.inputType === "numeric") {
+                                        if (!/^[+-]?\d*$/.test(value)) return
+                                      }
+
+                                      // 🟠 Only apply hash rule if explicitly hash
+                                      if (info.inputType === "hash") {
+                                        value = value.replace(/[^0-9a-fA-F]/g, "")
+                                      }
+
                                       setPredicateInputs((prev) => ({
                                         ...prev,
-                                        [selected]: e.target.value
+                                        [selected]: value
                                       }))
+                                    }}
+                                    placeholder={
+                                      info.inputType === "numeric"
+                                        ? "Enter number (e.g. +18)"
+                                        : info.inputType === "hash"
+                                          ? "Enter hex hash"
+                                          : info.inputType === "date"
+                                            ? "Select date"
+                                            : "Enter value"
                                     }
-                                    placeholder="Enter value"
                                     className="mt-1 w-full bg-slate-800 text-white rounded px-2 py-1 text-[10px]"
                                   />
                                 )}

@@ -66,7 +66,7 @@ export async function generateBbsProof({ mapping, request, context = "Default" }
         }
       })
 
-      if (revealIndices.length === 0) revealIndices.push(0)
+      // if (revealIndices.length === 0) revealIndices.push(0)
 
       const nonceBytes = base64ToUint8Array(request.nonce)
 
