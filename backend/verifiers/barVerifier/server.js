@@ -7,10 +7,7 @@ const { verifyProof } = require("./verifyProof");
 
 const fs = require("fs");
 const path = require("path");
-<<<<<<< HEAD
-=======
 const usedNullifiers = new Set();
->>>>>>> jsr
 
 const app = express();
 
@@ -116,26 +113,23 @@ app.get("/request", (req, res) => {
 
 app.post("/verify", async (req, res) => {
   try {
-<<<<<<< HEAD
-    const { id, nonce, proofs } = req.body;
-=======
+    console.log(req.body.messages);
+    
     const { id, nonce, proofs, nullifier } = req.body;
 
-  
-  if (!nullifier) {
-    return res.status(400).json({ error: "Nullifier is required." });
-  }
+    if (!nullifier) {
+      return res.status(400).json({ error: "Nullifier is required." });
+    }
 
-  // Check korche aage ei proof use hoiche kina
-  if (usedNullifiers.has(nullifier)) {
-    console.log("❌ Double-spending detected! This proof was already used.");
-    return res.status(400).json({ error: "This proof has already been used." });
-  }
+    // Check korche aage ei proof use hoiche kina
+    if (usedNullifiers.has(nullifier)) {
+      console.log("❌ Double-spending detected! This proof was already used.");
+      return res.status(400).json({ error: "This proof has already been used." });
+    }
 
-  // Notun proof hole Set e add kore nebe
-  usedNullifiers.add(nullifier);
-  console.log("✅ Nullifier accepted. Verifying proof...");
->>>>>>> jsr
+    // Notun proof hole Set e add kore nebe
+    usedNullifiers.add(nullifier);
+    console.log("✅ Nullifier accepted. Verifying proof...");
 
     // 1️⃣ Validate request ID
     if (!id || !requests[id]) {
@@ -180,11 +174,7 @@ app.post("/verify", async (req, res) => {
     request.status = "verified";
 
     request.verifiedUsers.push({
-<<<<<<< HEAD
-      subjectId: proofs[0]?.subjectId || "anonymous",
-=======
       subjectId: proofs[0]?.subjectId || nullifier,
->>>>>>> jsr
       timestamp: new Date().toISOString()
     });
 
@@ -204,11 +194,6 @@ app.get("/request-status", (req, res) => {
   if (!request) {
     return res.json({ status: "unknown", verifiedUsers: [] });
   }
-<<<<<<< HEAD
-
-=======
-  console.log("Request.verifiedusers",request.verifiedUsers);
->>>>>>> jsr
   res.json({
     status: request.status || "pending",
     verifiedUsers: request.verifiedUsers || []

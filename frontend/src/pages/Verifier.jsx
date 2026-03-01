@@ -13,6 +13,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import ScannerPage from './ScannerPage';
 import CredentialSelectorModal from "../components/CredentialSelectorModal";
 import VerificationResults from "../components/VerificationResults";
+import MessageBox from "../components/MessageBox";
 
 const Verifier = () => {
   const { credentials, setActiveTab } = useWallet();
@@ -48,13 +49,52 @@ const Verifier = () => {
 
   const [activeRequestId, setActiveRequestId] = useState(null)
 
+  const [messageBox, setMessageBox] = useState({
+    isOpen: false,
+    type: "error",
+    title: "",
+    message: "",
+    onConfirm: null,
+    onCancel: null
+  });
+
   // --- Button Handlers ---
   const handleGenerateProofClick = () => {
-    setStep(1); // start your multi-step animated flow
+    if (step === 3 && status === "success") {
+      setMessageBox({
+        isOpen: true,
+        type: "warning",
+        title: "Important Terminal Data",
+        message:
+          "The terminal contains important proof logs. Going back will clear this information. Are you sure you want to continue?",
+        confirmText: "Continue",
+        cancelText: "Stay",
+        onConfirm: () => {
+          setMessageBox(prev => ({ ...prev, isOpen: false }));
+          resetFlow();
+        },
+        onCancel: () =>
+          setMessageBox(prev => ({ ...prev, isOpen: false }))
+      });
+
+      return;
+    }
+
+    resetFlow();
+  };
+  const resetFlow = () => {
+    setStep(1);
     setSelectedCard(null);
     setDisclosedFields([]);
     setLogs([]);
     setStatus("idle");
+  };
+
+  const resetForNewVerify = () => {
+    setStep(1);
+    setStatus("idle");
+    setLogs([]);
+    setProofData(null);
   };
 
   useEffect(() => {
@@ -220,7 +260,7 @@ const Verifier = () => {
       console.log(proofRequest);
 
       // send proof to verifier backend
-      await fetch(
+      const response = await fetch(
         (proofRequest.proofRequest ?? proofRequest).response_uri,
         {
           method: "POST",
@@ -232,9 +272,27 @@ const Verifier = () => {
             nullifier
           })
         }
-      )
+      );
 
-      addLog("Proof sent to verifier 📡", "success")
+      const result = await response.json();
+
+      if (!response.ok) {
+        addLog("Verifier rejected proof ❌", "error");
+
+        setMessageBox({
+          isOpen: true,
+          type: "error",
+          title: "Verification Failed",
+          message: result.error || "Unknown verifier error occurred.",
+          onConfirm: () =>
+            setMessageBox(prev => ({ ...prev, isOpen: false }))
+        });
+
+        return; // stop here
+      }
+
+      addLog("Proof sent to verifier 📡", "success");
+      addLog(`Show to verifier: ${nullifier.substring(0, 5)}...${nullifier.substring(nullifier.length - 5)}`, "success");
 
     } catch (err) {
       console.error(err)
@@ -291,6 +349,15 @@ const Verifier = () => {
     } catch (err) {
       console.error("BBS ERROR:", err)
       addLog("Proof generation failed ❌", "error")
+      setMessageBox({
+        isOpen: true,
+        type: "error",
+        title: "Proof Generation Failed",
+        message:
+          "The proof could not be generated or sent to the verifier. Please check your credential selection or try again.",
+        onConfirm: () =>
+          setMessageBox(prev => ({ ...prev, isOpen: false }))
+      });
       addLog(err.message || "Unknown error")
     }
   }
@@ -369,10 +436,32 @@ const Verifier = () => {
 
         {/* Verify Proof Button */}
         <motion.button
-          whileHover={{ scale: 1.05, backgroundColor: "#f97316" }} // slightly grow + color change
-          whileTap={{ scale: 0.95 }} // click effect
+          whileHover={{ scale: 1.05, backgroundColor: "#f97316" }}
+          whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 300 }}
-          onClick={handleVerifyProofClick}
+          onClick={() => {
+            if (step === 3 && status === "success") {
+              setMessageBox({
+                isOpen: true,
+                type: "warning",
+                title: "Terminal Contains Proof Data",
+                message:
+                  "The terminal contains important verification logs. Verifying again may overwrite this data. Do you want to continue?",
+                confirmText: "Continue",
+                cancelText: "Stay",
+                onConfirm: () => {
+                  setMessageBox(prev => ({ ...prev, isOpen: false }));
+                  handleVerifyProofClick(); // proceed
+                },
+                onCancel: () =>
+                  setMessageBox(prev => ({ ...prev, isOpen: false }))
+              });
+
+              return;
+            }
+
+            handleVerifyProofClick();
+          }}
           className="flex-1 py-3 bg-orange-600 rounded-xl font-black text-white text-[10px] uppercase tracking-[3px] shadow-lg"
         >
           Verify Proof
@@ -627,18 +716,51 @@ const Verifier = () => {
           </motion.div>
         )}
 
-
         {/* STEP 3: TERMINAL */}
         {step === 3 && (
           <motion.div key="step3" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="bg-[#050912] border border-slate-800 rounded-2xl p-6 h-[300px] overflow-y-auto no-scrollbar font-mono text-[10px]">
-              {logs.map((l, i) => <div key={i} className={`mb-2 ${l.type === 'success' ? 'text-emerald-400 font-bold' : 'text-slate-500'}`}>{`> ${l.msg}`}</div>)}
+              {logs.map((l, i) => <div key={i} className={`mb-2 text-sm leading-relaxed ${l.type === 'success'
+                ? 'text-emerald-400 font-semibold'
+                : l.type === 'error'
+                  ? 'text-red-400 font-semibold'
+                  : 'text-slate-400'
+                }`}>
+                {`> ${l.msg}`}
+              </div>)}
               <div ref={logsEndRef} />
             </div>
             {status === 'success' && (
               <div className="flex gap-3 mt-4">
                 <button onClick={() => setShowRawProof(true)} className="flex-1 py-3 bg-slate-800 rounded-xl text-[10px] font-bold text-slate-400 uppercase">View Proof</button>
-                <button onClick={() => { setStep(1); setStatus('idle'); }} className="flex-1 py-3 bg-emerald-600 rounded-xl text-[10px] font-bold text-white uppercase">New Verify</button>
+                <button
+                  onClick={() => {
+                    if (step === 3 && status === "success") {
+                      setMessageBox({
+                        isOpen: true,
+                        type: "warning",
+                        title: "Terminal Contains Proof Data",
+                        message:
+                          "The terminal contains important verification logs. Starting a new verification will clear this data. Do you want to continue?",
+                        confirmText: "Continue",
+                        cancelText: "Stay",
+                        onConfirm: () => {
+                          setMessageBox(prev => ({ ...prev, isOpen: false }));
+                          resetForNewVerify();
+                        },
+                        onCancel: () =>
+                          setMessageBox(prev => ({ ...prev, isOpen: false }))
+                      });
+
+                      return;
+                    }
+
+                    resetForNewVerify();
+                  }}
+                  className="flex-1 py-3 bg-emerald-600 rounded-xl text-[10px] font-bold text-white uppercase"
+                >
+                  New Verify
+                </button>
               </div>
             )}
             {/* Raw Proof Modal */}
@@ -819,6 +941,10 @@ const Verifier = () => {
         credentials={credentials}
         onConfirm={handleMappingConfirm}
         onClose={() => setShowSelector(false)}
+      />
+
+      <MessageBox
+        {...messageBox}
       />
     </div>
 
