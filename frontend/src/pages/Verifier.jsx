@@ -786,7 +786,24 @@ const Verifier = () => {
                 Scan to Verify
               </h3>
 
-              <QRCodeCanvas value={qrLink} size={260} />
+              <div className="relative flex items-center justify-center w-[300px] h-[300px] overflow-hidden rounded-2xl bg-slate-100">
+                {/* The Running Border (Rotating Gradient) */}
+                <div className="absolute w-[150%] h-[150%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(transparent,transparent,#e66000,transparent)]" />
+
+                {/* The White Box (Slightly larger than the QR) */}
+                <div className="relative z-10 flex items-center justify-center w-[290px] h-[290px] bg-white rounded-xl">
+                  <QRCodeCanvas value={qrLink} size={260} />
+                </div>
+              </div>
+
+              {/* 👇 NEW BUTTON TO GO BACK TO THE FORM */}
+              <button
+                onClick={() => setQrLink(null)} // Assuming setQrLink is your state setter!
+                className="mt-10 mb-10 px-6 py-3 bg-slate-800/50 border border-slate-700 hover:border-orange-500 rounded-xl font-bold text-slate-300 hover:text-orange-400 text-[10px] uppercase tracking-[2px] transition-all flex items-center gap-2 group"
+              >
+                <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                New Request
+              </button>
 
               {/* 👇 THIS is correct now */}
               <VerificationResults requestId={activeRequestId} />
