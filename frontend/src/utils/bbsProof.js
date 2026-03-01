@@ -83,7 +83,7 @@ export async function generateBbsProof({ mapping, request, context = "Default" }
         attribute,
         proof: btoa(String.fromCharCode(...proof)),
         revealIndices,
-        messages: vc.proof.signature.messages
+        // messages: vc.proof.signature.messages
       })
     }
 

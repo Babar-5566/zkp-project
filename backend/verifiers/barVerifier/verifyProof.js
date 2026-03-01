@@ -10,7 +10,6 @@ async function verifyProof({ proofs, nonce, request }) {
   if (!proofs || !Array.isArray(proofs)) {
     return { verified: false };
   }
-  console.log(request);
   const issuerPublicKeyBase64 = request.issuer_pubkey;
 
   const publicKeyBytes = base64ToUint8Array(issuerPublicKeyBase64);
@@ -22,14 +21,14 @@ async function verifyProof({ proofs, nonce, request }) {
     try {
       const proofBytes = base64ToUint8Array(proofObj.proof);
 
-      const messageBytes = proofObj.messages.map(msg =>
-        new TextEncoder().encode(msg)
-      );
+      // const messageBytes = proofObj.messages.map(msg =>
+      //   new TextEncoder().encode(msg)
+      // );
 
       const verified = await blsVerifyProof({
         proof: proofBytes,
         publicKey: publicKeyBytes,
-        messages: messageBytes,
+        // messages: "messageBytes",
         nonce: nonceBytes
       });
 
