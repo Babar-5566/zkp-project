@@ -5,31 +5,11 @@ import { blsCreateProof } from "@mattrglobal/bbs-signatures";
  * Convert a base64 string to Uint8Array safely.
  * Removes whitespace/newlines for browser compatibility.
  */
-<<<<<<< Updated upstream
 export function base64ToUint8Array(base64) {
-    if (!base64) throw new Error("Empty input");
-    base64 = base64.replace(/\s+/g, ""); // remove newlines/whitespace
-    const binary = atob(base64);
-    return Uint8Array.from([...binary].map(c => c.charCodeAt(0)));
-=======
-export function base64ToUint8Array(input) {
-  if (!input) throw new Error("Empty input")
-
-  // Already Uint8Array
-  if (input instanceof Uint8Array) return input
-
-  // Already Buffer-like array
-  if (Array.isArray(input)) return Uint8Array.from(input)
-
-  // Try base64 decode
-  try {
-    const clean = String(input).replace(/\s+/g, "")
-    const binary = atob(clean)
-    return Uint8Array.from([...binary].map(c => c.charCodeAt(0)))
-  } catch {
-    throw new Error("Invalid base64 signature/publicKey from issuer")
-  }
->>>>>>> Stashed changes
+  if (!base64) throw new Error("Empty input");
+  base64 = base64.replace(/\s+/g, ""); // remove newlines/whitespace
+  const binary = atob(base64);
+  return Uint8Array.from([...binary].map(c => c.charCodeAt(0)));
 }
 
 /**
@@ -39,63 +19,78 @@ export function base64ToUint8Array(input) {
  * @param {String} context - Optional context, defaults to "Default"
  * @returns {Object} proof object with proof string, reveal indices, and messages
  */
-export async function generateBbsProof({ vc, predicates, context = "Default" }) {
-    try {
-        if (!vc || !vc.proof || !vc.proof.signature) {
-            throw new Error("Invalid VC or missing proof");
-        }
+export async function generateBbsProof({ mapping, request, context = "Default" }) {
+  try {
 
-        // Convert messages to Uint8Array
-        const messageBytes = vc.proof.signature.messages.map(attr =>
-            new TextEncoder().encode(attr)
-        );
-
-        // Decode public key and signature
-        const publicKey = base64ToUint8Array(vc.publicKey);
-        const signature = base64ToUint8Array(vc.proof.signature.signature);;
-
-        // Encode context
-        const contextBytes = new TextEncoder().encode(context);
-
-        // Determine reveal indices
-        const revealIndices = [];
-        predicates.forEach(p => {
-            if (p.type === "equality" || p.type === "reveal") {
-                const idx = vc.proof.signature.messages.findIndex(m =>
-                    m === `${p.attribute}:${p.value}`);
-                if (idx === -1)
-                    throw new Error(`Equality predicate failed for ${p.attribute}`);
-                revealIndices.push(idx);
-            }
-        });
-
-        // If nothing selected, reveal at least index 0
-        if (revealIndices.length === 0) revealIndices.push(0);
-
-        // Generate a random nonce for proof
-        const nonce = crypto.getRandomValues(new Uint8Array(32));
-
-        // const publicKeyBytes = Uint8Array.from(Buffer.from(publicKey, "base64"));
-
-        // Create BBS+ selective disclosure proof
-        const proof = await blsCreateProof({
-            signature,
-            publicKey,
-            messages: messageBytes,
-            revealed: revealIndices,
-            nonce,
-            context: contextBytes
-        });
-
-        // Return proof as base64 string for transport/storage
-        return {
-            proof: btoa(String.fromCharCode(...proof)),
-            revealIndices,
-            messages: vc.proof.signature.messages
-        };
-
-    } catch (err) {
-        console.error("BBS+ proof generation failed:", err);
-        throw new Error("Failed to create proof: " + err.message);
+    if (!mapping || Object.keys(mapping).length === 0) {
+      throw new Error("No credential mapping provided")
     }
+    if (!request.nonce) {
+      throw new Error("Request nonce missing")
+    }
+
+    const proofs = []
+
+    // Loop through each attribute → VC pair
+    for (const [attribute, vc] of Object.entries(mapping)) {
+
+      if (!vc || !vc.proof || !vc.proof.signature) {
+        throw new Error(`Invalid VC for ${attribute}`)
+      }
+      
+      console.log(vc);
+      
+      const messageBytes = vc.proof.signature.messages.map(attr =>
+        new TextEncoder().encode(attr)
+      )
+
+      const publicKey = base64ToUint8Array(vc.publicKey)
+      const signature = base64ToUint8Array(vc.proof.signature.signature)
+
+      const contextBytes = new TextEncoder().encode(context)
+
+      // Find predicates related to this attribute
+      const predicates = request.requested_predicates.filter(
+        p => p.name === attribute
+      )
+
+      const revealIndices = []
+
+      predicates.forEach(p => {
+        if (p.predicate === "existence" || p.predicate === "reveal") {
+          const idx = vc.proof.signature.messages.findIndex(m =>
+            m.startsWith(`${attribute}:`)
+          )
+
+          if (idx !== -1) revealIndices.push(idx)
+        }
+      })
+
+      if (revealIndices.length === 0) revealIndices.push(0)
+
+      const nonceBytes = base64ToUint8Array(request.nonce)
+
+      const proof = await blsCreateProof({
+        signature,
+        publicKey,
+        messages: messageBytes,
+        revealed: revealIndices,
+        nonce: nonceBytes,
+        context: contextBytes
+      })
+
+      proofs.push({
+        attribute,
+        proof: btoa(String.fromCharCode(...proof)),
+        revealIndices,
+        // messages: vc.proof.signature.messages
+      })
+    }
+
+    return proofs
+
+  } catch (err) {
+    console.error("BBS+ proof generation failed:", err)
+    throw err
+  }
 }

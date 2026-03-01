@@ -72,9 +72,9 @@ const AnimatedCounter = ({ value, suffix = "" }) => {
 };
 
 // ==========================================
-// 3️⃣ MAIN MODAL COMPONENT
+// 3️⃣ MAIN MODAL COMPONENT (🚀 TRIGGER BUTTON REMOVED)
 // ==========================================
-const BenchmarkModal = ({ isOpen, onClose, isTesting, metrics, startEvaluation }) => {
+const BenchmarkModal = ({ isOpen, onClose, isTesting, metrics, engineName, customTitle }) => {
   const [loadingPhase, setLoadingPhase] = useState(0);
 
   useEffect(() => {
@@ -86,29 +86,7 @@ const BenchmarkModal = ({ isOpen, onClose, isTesting, metrics, startEvaluation }
 
   return (
     <>
-      {/* --- TRIGGER BUTTON --- */}
-      {/* ⚠️ FIX APPLIED HERE: Mobile -> bottom-20 right-6 | Desktop -> bottom-8 left-8 */}
-      <div className="fixed bottom-20 left-6 md:bottom-8 md:right-auto md:left-8 z-[60]">
-        <motion.button
-          onClick={startEvaluation}
-          initial={{ boxShadow: "0px 0px 0px 0px rgba(6,182,212,0)", borderColor: "rgba(6,182,212,0.3)" }}
-          whileHover={{ 
-            boxShadow: "0px 0px 20px 0px rgba(6,182,212,0.4)", 
-            borderColor: "rgba(6,182,212,0.9)",
-            scale: 1.02
-          }}
-          whileTap={{ scale: 0.95 }}
-          className="bg-[#040914]/90 backdrop-blur-md border px-5 py-3 rounded-[12px] flex items-center gap-3 transition-all duration-300 group overflow-hidden relative"
-        >
-          {/* Button Hover Sweep */}
-          <motion.div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-cyan-400/10 to-transparent group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
-          
-          <BarChart3 className="text-white group-hover:text-cyan-400 transition-colors duration-300 relative z-10" size={18} />
-          <span className="text-white font-mono text-[11px] font-bold uppercase tracking-[0.2em] group-hover:text-cyan-50 mt-0.5 transition-colors duration-300 relative z-10">
-            Telemetry
-          </span>
-        </motion.button>
-      </div>
+      {/* 🚀 FIXED: The Trigger Button that used to be here has been completely removed! It is now handled globally by App.jsx */}
 
       {/* --- MODAL OVERLAY --- */}
       <AnimatePresence>
@@ -139,11 +117,11 @@ const BenchmarkModal = ({ isOpen, onClose, isTesting, metrics, startEvaluation }
                   </div>
                   <div>
                     <h3 className="text-white/95 text-sm md:text-base font-black uppercase tracking-widest flex items-center gap-2">
-                      <ScrambleText text="Zero-Knowledge Diagnostics" />
+                      <ScrambleText text={customTitle || "Zero-Knowledge Diagnostics"} />
                       {isTesting && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />}
                     </h3>
                     <p className="text-[9px] md:text-[10px] text-slate-500 font-mono font-medium tracking-[0.2em] uppercase mt-0.5">
-                      Core Engine v2.1 • BLS12-381
+                      {engineName ? `Core Engine: ${engineName}` : "Core Engine v2.1 • BLS12-381"}
                     </p>
                   </div>
                 </div>
@@ -222,7 +200,7 @@ const BenchmarkModal = ({ isOpen, onClose, isTesting, metrics, startEvaluation }
                               <Signal size={12}/> Network
                             </span>
                             <span className="flex items-center gap-1.5 text-emerald-400 text-[9px] uppercase tracking-widest font-bold bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Stable
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> {metrics?.networkStatus || "Stable"}
                             </span>
                           </div>
                           <p className="text-white font-mono font-medium text-xs md:text-sm relative z-10">

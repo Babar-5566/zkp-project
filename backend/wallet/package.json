@@ -13,13 +13,8 @@
   "license": "ISC",
   "dependencies": {
     "@mattrglobal/bbs-signatures": "^2.0.0",
-    "circomlibjs": "^0.1.7",
     "cors": "^2.8.6",
     "express": "^5.2.1",
-<<<<<<< Updated upstream
-    "ffjavascript": "^0.3.1",
-=======
->>>>>>> Stashed changes
     "snarkjs": "^0.7.6",
     "uuid": "^13.0.0"
   },

@@ -159,3 +159,20 @@ export const predicateInfo = {
   hash: { message: "It checks whether the field matches the provided hash.", requiresInput: true },
   "selective disclosure": { message: "It reveals only this field in the proof.", requiresInput: false },
 };
+
+export const getFieldProofType = (field) => {
+  switch (field.type) {
+    case "number":
+    case "custom-year":
+      return "numeric"
+
+    case "custom-date":
+      return "date"
+
+    case "custom-select":
+      return "enum"
+
+    default:
+      return "string"
+  }
+}
