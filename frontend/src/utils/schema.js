@@ -150,12 +150,51 @@ export const getFieldsByIdType = (idType) => {
 };
 
 export const predicateInfo = {
-  existence: { message: "It checks whether this field exists in the digital credential.", requiresInput: false },
-  equality: { message: "It checks whether this field matches the input value in the digital credential.", requiresInput: true },
-  "cross-field": { message: "It checks the relation between multiple fields in the credential.", requiresInput: false },
-  "numeric/range": { message: "It checks whether the numeric value satisfies the specified range.", requiresInput: true },
-  "date comparison": { message: "It checks whether the date satisfies the specified comparison.", requiresInput: true },
-  "string match": { message: "It checks whether the field matches the given string or pattern.", requiresInput: true },
-  hash: { message: "It checks whether the field matches the provided hash.", requiresInput: true },
-  "selective disclosure": { message: "It reveals only this field in the proof.", requiresInput: false },
+  existence: {
+    message: "It checks whether this field exists in the digital credential.",
+    requiresInput: false,
+    inputType: null
+  },
+
+  equality: {
+    message: "It checks whether this field matches the given numeric value.",
+    requiresInput: true,
+    inputType: "text"   // signed integer
+  },
+
+  "cross-field": {
+    message: "It checks the relation between multiple fields in the credential.",
+    requiresInput: false,
+    inputType: null
+  },
+
+  "numeric/range": {
+    message: "It checks whether the numeric value satisfies the specified range (e.g. +18, -5).",
+    requiresInput: true,
+    inputType: "numeric"
+  },
+
+  "date comparison": {
+    message: "It checks whether the date satisfies the specified comparison.",
+    requiresInput: true,
+    inputType: "date"
+  },
+
+  "string match": {
+    message: "It checks whether the field matches the given string or pattern.",
+    requiresInput: true,
+    inputType: "text"
+  },
+
+  hash: {
+    message: "It checks whether the field matches the provided hash value.",
+    requiresInput: true,
+    inputType: "hash"   // hex only
+  },
+
+  "selective disclosure": {
+    message: "It reveals only this field in the proof.",
+    requiresInput: false,
+    inputType: null
+  }
 };

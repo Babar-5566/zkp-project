@@ -786,7 +786,24 @@ const Verifier = () => {
                 Scan to Verify
               </h3>
 
-              <QRCodeCanvas value={qrLink} size={260} />
+              <div className="relative flex items-center justify-center w-[300px] h-[300px] overflow-hidden rounded-2xl bg-slate-100">
+                {/* The Running Border (Rotating Gradient) */}
+                <div className="absolute w-[150%] h-[150%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(transparent,transparent,#e66000,transparent)]" />
+
+                {/* The White Box (Slightly larger than the QR) */}
+                <div className="relative z-10 flex items-center justify-center w-[290px] h-[290px] bg-white rounded-xl">
+                  <QRCodeCanvas value={qrLink} size={260} />
+                </div>
+              </div>
+
+              {/* 👇 NEW BUTTON TO GO BACK TO THE FORM */}
+              <button
+                onClick={() => setQrLink(null)} // Assuming setQrLink is your state setter!
+                className="mt-10 mb-10 px-6 py-3 bg-slate-800/50 border border-slate-700 hover:border-orange-500 rounded-xl font-bold text-slate-300 hover:text-orange-400 text-[10px] uppercase tracking-[2px] transition-all flex items-center gap-2 group"
+              >
+                <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                New Request
+              </button>
 
               {/* 👇 THIS is correct now */}
               <VerificationResults requestId={activeRequestId} />
@@ -825,14 +842,6 @@ const Verifier = () => {
                     placeholder="Search attributes..."
                     className="flex-1 bg-slate-800 text-white rounded px-3 py-2 text-sm"
                   />
-
-                  {/* <button
-                  onClick={handleSearch}
-                  className="px-4 py-2 bg-orange-600 rounded font-bold text-white text-xs uppercase"
-                >
-                  Search
-                </button> */}
-                  {/* no need of button, input change will make the search query run automatically as used useEffect */}
                 </div>
 
                 <div className="space-y-4 mb-8">
@@ -899,15 +908,39 @@ const Verifier = () => {
 
                                 {info.requiresInput && (
                                   <input
-                                    type="text"
+                                    type={
+                                      info.inputType === "date"
+                                        ? "date"
+                                        : "text"
+                                    }
                                     value={predicateInputs[selected] || ""}
-                                    onChange={(e) =>
+                                    onChange={(e) => {
+                                      let value = e.target.value
+
+                                      // 🟠 Only apply numeric rule if explicitly numeric
+                                      if (info.inputType === "numeric") {
+                                        if (!/^[+-]?\d*$/.test(value)) return
+                                      }
+
+                                      // 🟠 Only apply hash rule if explicitly hash
+                                      if (info.inputType === "hash") {
+                                        value = value.replace(/[^0-9a-fA-F]/g, "")
+                                      }
+
                                       setPredicateInputs((prev) => ({
                                         ...prev,
-                                        [selected]: e.target.value
+                                        [selected]: value
                                       }))
+                                    }}
+                                    placeholder={
+                                      info.inputType === "numeric"
+                                        ? "Enter number (e.g. +18)"
+                                        : info.inputType === "hash"
+                                          ? "Enter hex hash"
+                                          : info.inputType === "date"
+                                            ? "Select date"
+                                            : "Enter value"
                                     }
-                                    placeholder="Enter value"
                                     className="mt-1 w-full bg-slate-800 text-white rounded px-2 py-1 text-[10px]"
                                   />
                                 )}
