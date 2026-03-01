@@ -16,6 +16,7 @@ const VerificationResults = ({ requestId, onExpired }) => {
           `http://localhost:3001/request-status?id=${requestId}`
         );
         const data = await res.json();
+        console.log("Data",data);
 
         setResults(data.verifiedUsers || []);
         setStatus(data.status);
@@ -70,7 +71,7 @@ const VerificationResults = ({ requestId, onExpired }) => {
           className="bg-slate-900 p-3 rounded-xl mb-2 border border-slate-700"
         >
           <p className="text-emerald-400 font-mono text-xs">
-            {user.subjectId}
+            {`${user.subjectId.substring(0, 5)}...${user.subjectId.substring(user.subjectId.length - 5)}`}
           </p>
           <p className="text-slate-400 text-[10px]">
             Verified at: {new Date(user.timestamp).toLocaleTimeString()}
