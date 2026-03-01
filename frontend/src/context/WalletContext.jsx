@@ -16,20 +16,7 @@ export const WalletProvider = ({ children }) => {
   const [credentials, setCredentials] = useState([]);
 
   const initialForm = {
-    // fullName: '', 
     idType: '',
-    // enrolmentId: '',
-    // address: '',
-    // timeOfBirth: '', 
-    // placeOfBirth: '',
-    // parentNames: '',
-    // nationality: 'Indian',
-    // board: '',
-    // rollNumber: '',
-    // subjects: '',
-    // passingYear: '',
-    // fatherName: '',
-    // panType: 'Individual'
   };
 
   const getInitialFormData = (type) => {
@@ -74,16 +61,50 @@ export const WalletProvider = ({ children }) => {
     );
   };
 
+  // ------------------------------
+  // HOLDER SECRET MANAGEMENT
+  // ------------------------------
+
+  const getOrCreateHolderSecret = async () => {
+    let secret = localStorage.getItem("holderSecret");
+
+    if (!secret) {
+      const array = new Uint8Array(32);
+      crypto.getRandomValues(array);
+      secret = Array.from(array)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      localStorage.setItem("holderSecret", secret);
+    }
+
+    return secret;
+  };
+
+  const sha256 = async (message) => {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
   // --- CORE FUNCTIONS ---
 
   const issueCredential = async () => {
     if (!formData.idType) return; // safety check
+
+    // 1️⃣ Get holder secret
+    const holderSecret = await getOrCreateHolderSecret();
+
+    // 2️⃣ Compute holder commitment
+    const holderCommitment = await sha256(holderSecret);
 
     const payload = {
       idType: formData.idType,
       data: {
         ...formData,
         issuer: "Govt. of India",
+        holderCommitment, 
         ...(formData.idType === "Passport" && { nationality: "India" }) // force nationality
       }
     };

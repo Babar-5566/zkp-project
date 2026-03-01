@@ -5,6 +5,9 @@ const { v4: uuidv4 } = require("uuid");
 require("dotenv").config();
 const { verifyProof } = require("./verifyProof");
 
+const fs = require("fs");
+const path = require("path");
+
 const app = express();
 
 app.use(cors());
@@ -17,8 +20,8 @@ function generateId() {
   return crypto.randomBytes(16).toString("hex");
 }
 
-function expiry(seconds = 300) {
-  return Math.floor(Date.now() / 1000) + seconds;
+function expiry(seconds) {
+  return new Date(Date.now() + seconds * 1000).toISOString();
 }
 
 function buildBbsProofRequest({
@@ -27,13 +30,19 @@ function buildBbsProofRequest({
   nonce
 }) {
   const id = generateId();
+
+  const issuerKeys = JSON.parse(
+    fs.readFileSync(path.join(__dirname, "../../issuer/config/issuerKeys.json"))
+  );
+
+  const ISSUER_PUBLIC_KEY = issuerKeys.publicKey;
   return {
     version: "1.0",
     id,
     type: "BbsProofRequest",
     credential_type: "identity_credential",
-    issuer_pubkey: process.env.ISSUER_PUBLIC_KEY_PATH,
-    scope_id: process.env.VERIFIER_DOMAIN,
+    issuer_pubkey: ISSUER_PUBLIC_KEY,
+    scope_id: "localhost_verifier",
     nonce,
     context: "Default",
     requested_attributes,
@@ -42,7 +51,8 @@ function buildBbsProofRequest({
       circuit_id: "age_check_v1",
       verification_key_id: "vk_01"
     },
-    response_uri: `http://localhost:3001/request?id=${id}`,
+    request_uri: `http://localhost:3001/request?id=${id}`,
+    response_uri: `http://localhost:3001/verify`,
     expires_at: expiry(300)
   };
 }
@@ -64,13 +74,17 @@ app.post("/create-proof-request", (req, res) => {
       requested_predicates,
       nonce
     });
-    res.json({
-      response_uri: proofRequest.response_uri,
-      proof_request: proofRequest
-    });
+
+    requests[proofRequest.id] = {
+      ...proofRequest,
+      status: "pending",
+      verifiedUsers: []
+    };
+
+    res.json(proofRequest);
   } catch (err) {
     console.log(err);
-    
+
     res.status(500).json({ error: "Failed to build proof request" });
   }
 });
@@ -91,45 +105,66 @@ app.post("/create-proof-request-mock", (req, res) => {
 app.get("/request", (req, res) => {
   const { id } = req.query;
 
-  if (!requests[id]) return res.status(404).send("Not found");
+  if (!requests[id]) return res.status(404).send("Not found Hey");
 
-  res.json({
-    version: "1.0",
-    id,
-    ...requests[id].policy,
-    nonce: "mock-nonce-1",
-    context: "Default"
-  });
+  res.json(requests[id]);
 });
 
 app.post("/verify", async (req, res) => {
   try {
-    const { nonce, id } = req.body;
+    const { id, nonce, proofs } = req.body;
 
-    if (id && requests[id]) {
-      requests[id].status = "verified";
-      return res.json({ success: true });
+    // 1️⃣ Validate request ID
+    if (!id || !requests[id]) {
+      console.log("Invalid request ID");
+
+      return res.status(400).json({ error: "Invalid request ID" });
     }
 
-    if (!nonce || !nonces[nonce]) {
-      return res.status(400).json({ error: "Invalid or expired nonce" });
+    const request = requests[id];
+
+    // 2️⃣ Check request expiry
+    if (Date.now() > new Date(request.expires_at).getTime()) {
+      console.log("Request expired");
+      request.status = "expired";
+      return res.status(400).json({ error: "Request expired" });
     }
 
-    if (nonces[nonce] < Math.floor(Date.now() / 1000)) {
-      delete nonces[nonce];
-      return res.status(400).json({ error: "Nonce expired" });
+    // 3️⃣ Validate nonce matches the original request nonce
+    if (!nonce || nonce !== request.nonce) {
+      console.log("Invalid nonce");
+      return res.status(400).json({ error: "Invalid nonce" });
     }
 
-    delete nonces[nonce];
+    // 4️⃣ Validate proofs exist
+    if (!proofs || !Array.isArray(proofs) || proofs.length === 0) {
+      console.log("No proofs provided");
+      return res.status(400).json({ error: "No proofs provided" });
+    }
 
-    const result = await verifyProof(req.body);
+    // 5️⃣ Cryptographically verify proofs
+    const result = await verifyProof({
+      proofs,
+      nonce,
+      request
+    });
 
-    if (result.verified) {
-      return res.json({ access: "GRANTED" });
-    } else {
+    if (!result.verified) {
       return res.json({ access: "DENIED" });
     }
+
+    // 6️⃣ Mark request as verified
+    request.status = "verified";
+
+    request.verifiedUsers.push({
+      subjectId: proofs[0]?.subjectId || "anonymous",
+      timestamp: new Date().toISOString()
+    });
+
+    return res.json({ access: "GRANTED" });
+
   } catch (err) {
+    console.error("Verification failed:", err);
     res.status(500).json({ error: "Verification failed" });
   }
 });
@@ -137,8 +172,15 @@ app.post("/verify", async (req, res) => {
 app.get("/request-status", (req, res) => {
   const { id } = req.query;
 
+  const request = requests[id];
+
+  if (!request) {
+    return res.json({ status: "unknown", verifiedUsers: [] });
+  }
+
   res.json({
-    status: requests[id]?.status || "unknown"
+    status: request.status || "pending",
+    verifiedUsers: request.verifiedUsers || []
   });
 });
 
