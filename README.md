@@ -155,7 +155,7 @@ Selective disclosure → BBS+ only
 ```
 ---
 # REQUEST SCHEMAS
-Verifier requests from the user (or wallet) :-
+### Verifier requests from the user (or wallet) :-
 ```bash
 (Verifier → Wallet)
 {
@@ -232,6 +232,7 @@ Example :-
 }
 ```
 # RESPONSE SCHEMAS
+### Issuer responses to the user (or wallet) :-
 ```bash
 (Issuer → Wallet)
 {
@@ -313,7 +314,7 @@ Example :-
   publicKey: 'txyTIDnBfboTY/b/ADO1++12ACwcYWWuJNG/jDAQVd3mwz1zgE0b/QmLmUiWOb0NAxNZMHUU53BDiM/+t5H/56lIF6y5woIvhY1CmL4nWJ455WDLLJG21zbVzsjFiLH2'
 }
 ```
-Wallet responses to the verifier :-
+### Wallet responses to the verifier :-
 ```bash
 (Wallet → Verifier)
 {
