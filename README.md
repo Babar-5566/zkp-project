@@ -1,14 +1,5 @@
-Starting on 14.2.26
-# 19.2.26
-- follow DID + VC format (Do not change the working of the system, just create a function that converts the object or cred structure we use to the standard structure of storing creds. Create a button to show the cred in that format and allow the user to download the .json file which contains the proof in that format)
 
-{What's done : backend converts received data to desired DID+VC+REVOCATION structure}
-- two verifiers should not able to track or link a proof (or user).
-- revocaion handling (used accumalator way to solve this\n
-
-{What's done : accumulator.json being generated in data folder}
-
-# flow :-
+# Flow :-
 ```bash
 Verifier creates proof request
         ↓
@@ -43,7 +34,8 @@ Verifier backend
      ↓
  Decision engine
 ```
-# Cuurent Schema for different certificates :-
+---
+# Schema for different certificates :-
 ```  bash
 - Aadhaar: [
         "fullName", "dob", "gender", "address", "photoVerified",
@@ -70,7 +62,7 @@ Verifier backend
 - "10thMarksheet": ["fullName", "dob", "school", "board", "marks", "rollNumber", "issuer"],
 - "10thAdmit": ["fullName", "dob", "school", "board", "rollNumber", "issuer",]
 ```
-
+---
 # Types of predicate :-
 ```bash
 
@@ -161,8 +153,9 @@ String match → BBS+ preferred
 Hash → BBS+ preferred
 Selective disclosure → BBS+ only
 ```
-
+---
 # REQUEST SCHEMAS
+Verifier requests from the user (or wallet) :-
 ```bash
 (Verifier → Wallet)
 {
@@ -192,42 +185,50 @@ Selective disclosure → BBS+ only
   },
 
   "response_uri": "https://verifier.com/api/verify",
-  "expires_at": 1710000000
+  "expires_at": 1710000000,
+
+  "status":"pending",
+  "verifiedUsers":[
+    {
+      "subjectId":"fc153fa1aa058b3e6104426d2344136dd9fdde9dbcd8165e12db0141608c1397",
+      "timestamp":"2026-03-02T00:18:10.142Z"
+    }
+  ]
+
 }
-
-Do not prefer example !!!
-example:
+```
+Example :-
+```bash
 {
-  "request_id": "req_8891",
-  "credential_type": "university_id",
-
-  "issuer_pubkey": "pk_issuer_xyz",
-
-  "scope_id": "verifier_A.example.com",
-
-  "challenge": "6fa81c9aaf8d9e",
-
-  "disclosures": ["university"],
-
-  "predicates": [
+  "version": "1.0",
+  "id": "fa1e98e3fae3c31a1caf93f8cbf12466",
+  "type": "BbsProofRequest",
+  "credential_type": "identity_credential",
+  "issuer_pubkey": "txyTIDnBfboTY/b/ADO1++12ACwcYWWuJNG/jDAQVd3mwz1zgE0b/QmLmUiWOb0NAxNZMHUU53BDiM/+t5H/56lIF6y5woIvhY1CmL4nWJ455WDLLJG21zbVzsjFiLH2",
+  "scope_id": "localhost_verifier",
+  "nonce": "3c9657eda42d19c52aba00b7c0ad2b41",
+  "context": "Default",
+  "requested_attributes": [],
+  "requested_predicates": [
     {
-      "attribute": "age",
-      "type": "range",
-      "params": { "min": 18 }
-    },
-    {
-      "attribute": "degree",
-      "type": "equals",
-      "params": { "value": "BTech" }
+      "name": "fullName",
+      "predicate": "existence"
     }
   ],
-
   "zk": {
-    "circuit_id": "age_degree_v3",
-    "verification_key_id": "vk_2026_v3"
+    "circuit_id": "age_check_v1",
+    "verification_key_id": "vk_01"
   },
-
-  "expires_at": "2026-02-17T16:30:00Z"
+  "request_uri": "http://localhost:3001/request?id=fa1e98e3fae3c31a1caf93f8cbf12466",
+  "response_uri": "http://localhost:3001/verify",
+  "expires_at": "2026-03-02T00:22:47.130Z",
+  "status": "verified",
+  "verifiedUsers": [
+    {
+      "subjectId": "fc153fa1aa058b3e6104426d2344136dd9fdde9dbcd8165e12db0141608c1397",
+      "timestamp": "2026-03-02T00:18:10.142Z"
+    }
+  ]
 }
 ```
 # RESPONSE SCHEMAS
@@ -253,7 +254,8 @@ example:
     "gender": "Other",
     "address": "25234526webrvg",
     "photoVerified": "No",
-    "issuer": "Govt. of India"
+    "issuer": "Govt. of India",
+    holderCommitment: 'b797beb8067c9...8fd28b5aecf2b6034d9'       
   },
   "credentialStatus": {
     "id": "https://example.com/status/3",
@@ -271,280 +273,74 @@ example:
   "publicKey": "txyTIDnBfboTY/b/ADO1++12ACwcYWWuJNG/jDAQVd3mwz1zgE0b/QmLmUiWOb0NAxNZMHUU53BDiM/+t5H/56lIF6y5woIvhY1CmL4nWJ455WDLLJG21zbVzsjFiLH2"
 }
 ```
+Example :-
+```bash
+{
+  '@context': [ 'https://www.w3.org/2018/credentials/v1' ],
+  id: 'urn:uuid:72bcf780-29d3-448d-815c-2ef11f0285d1',
+  type: [ 'VerifiableCredential', 'BirthCertificateCredential' ],
+  issuer: 'did:example:gov-india',
+  holderCommitment: 'e9e5dafd8e9cb797beb8067c98fd28b5aecf2b6034d9c72d2cf2ddcd06fde946',
+  issuanceDate: '2026-03-02T00:36:12.959Z',
+  credentialSubject: {
+    id: 'did:example:a790fda4-ccb6-412b-bb43-04b43219a7cd',
+    idType: 'Birth Certificate',
+    fullName: 'Rahul',
+    dob: '03/02/2020',
+    placeOfBirth: 'Kolkata',
+    fatherName: 'Raju',
+    motherName: 'Rani',
+    issuer: 'Govt. of India',
+    holderCommitment: 'e9e5dafd8e9cb797beb8067c98fd28b5aecf2b6034d9c72d2cf2ddcd06fde946'        
+  },
+  credentialStatus: {
+    id: 'https://example.com/status/56',
+    type: 'AccumulatorStatus',
+    accumulatorId: 'revocation-list-1',
+    index: 56
+  },
+  proof: {
+    type: 'BbsBlsSignature2020',
+    created: '2026-03-02T00:36:12.959Z',
+    proofPurpose: 'assertionMethod',
+    verificationMethod: 'did:example:gov-india#key-1',
+    signature: {
+      signature: 'jzO6nTdStsiyVXCvwrL0k0XJzz1dzqxplqkrb5owil+iZV9YDSAKpWfVrHh28ctTYUHlKfzccE4m7waZyoLEkBLFiK2g54Q2i+CdtYBgDdkUDsoULSBMcH1MwGHwdjfXpldFNFrHFx/IAvLVniyeMQ==',
+      messages: [Array],
+      context: 'Default'
+    }
+  },
+  publicKey: 'txyTIDnBfboTY/b/ADO1++12ACwcYWWuJNG/jDAQVd3mwz1zgE0b/QmLmUiWOb0NAxNZMHUU53BDiM/+t5H/56lIF6y5woIvhY1CmL4nWJ455WDLLJG21zbVzsjFiLH2'
+}
+```
+Wallet responses to the verifier :-
 ```bash
 (Wallet → Verifier)
 {
-  "request_id": "string",
-  "timestamp": "ISO_timestamp",
-
-  "scope": {
-    "id": "string",
-    "pseudonym": "hex"
-  },
-
-  "disclosed_attributes": {
-    "attribute": "value"
-  },
-
-  "bbs_proof": {
-    "proof": "base64",
-    "issuer_pubkey": "string",
-    "nonce": "string"
-  },
-
-  "zk_proof": {
-    "protocol": "groth16 | plonk",
-    "curve": "bn128 | bls12-381",
-
-    "pi_a": ["hex", "hex"],
-    "pi_b": [["hex","hex"],["hex","hex"]],
-    "pi_c": ["hex", "hex"]
-  },
-
-  "public_inputs": {
-    "predicate_inputs": {},
-    "credential_commitment": "hex",
-    "scope_pseudonym": "hex",
-    "challenge": "string"
-  },
-
-  "binding": {
-    "proof_hash": "hex",
-    "credential_hash": "hex",
-    "circuit_id": "string"
-  }
+  "id": "8e3fae3c3...caf93f8cbf",
+  "nonce": "da42d19c52...aba00b7c0a",
+  "nullifier": "fc153f...1608c1397",
+  "proofs": [
+    {
+      "attribute": "panNumber",
+      "proof": "AAgABJVS...31AVIGEpHY0EZEA=",
+      "revealIndices": [5]
+    }
+  ]
 }
-
-example:{
-  "request_id": "req_8891",
-  "timestamp": "2026-02-17T16:02:11Z",
-
-  "scope": {
-    "id": "verifier_A.example.com",
-    "pseudonym": "0x91abf23981de"
-  },
-
-  "disclosed_attributes": {
-    "university": "XYZ University"
-  },
-
-  "bbs_proof": {
-    "proof": "b64:8hfj29fh29fh29fh29fh...",
-    "issuer_pubkey": "pk_issuer_xyz",
-    "nonce": "6fa81c9aaf8d9e"
-  },
-
-  "zk_proof": {
-    "protocol": "groth16",
-    "curve": "bn128",
-    "pi_a": ["0x1c4b8c7...", "0x0ab3e91..."],
-    "pi_b": [
-      ["0x091aa...", "0x2c9fa..."],
-      ["0x31fae...", "0x5b83d..."]
-    ],
-    "pi_c": ["0x9182f...", "0x55fa1..."]
-  },
-
-  "public_inputs": {
-    "predicate_inputs": {
-      "age_min": 18,
-      "degree_hash": "0x8fa1e22d9f..."
-    },
-    "credential_commitment": "0x6ab83f91...",
-    "scope_pseudonym": "0x91abf23981de",
-    "challenge": "6fa81c9aaf8d9e"
-  },
-
-  "binding": {
-    "proof_hash": "0xa9281abf...",
-    "credential_hash": "0x3ab81ff1...",
-    "circuit_id": "age_degree_v3"
-  }
-}
-
-
 ```
-
-# Predicates checking with payload examples:-
-``` bash
-- Equality check
-{
-  "documentType": "Aadhaar",
-  "predicateType": "equality",
-  "predicate": "gender == Male",
-  "value": "Male",
-  "expected": "Male",
-  "result": true,
-  "proof": "BASE64_PROOF_STRING_12345",
-  "nonce": "uuid-1",
-  "issuer": "UIDAI",
-  "credentialHash": "hash123"
-}
-
-- Numeric comparison
-{
-  "documentType": "Aadhaar",
-  "predicateType": "numeric",
-  "predicate": "age >= 18",
-  "value": 22,
-  "operator": ">=",
-  "compareTo": 18,
-  "result": true,
-  "proof": "BASE64_PROOF_STRING_12345",
-  "nonce": "uuid-2",
-  "issuer": "UIDAI",
-  "credentialHash": "hash123"
-}
-
-- Range check
-{
-  "documentType": "Aadhaar",
-  "predicateType": "range",
-  "predicate": "18 <= age <= 60",
-  "value": 35,
-  "min": 18,
-  "max": 60,
-  "result": true,
-  "proof": "BASE64_PROOF_STRING_12345",
-  "nonce": "uuid-3",
-  "issuer": "UIDAI",
-  "credentialHash": "hash123"
-}
-
-- Set membership
-{
-  "documentType": "Aadhaar",
-  "predicateType": "set",
-  "predicate": "state in approved list",
-  "value": "WB",
-  "set": ["WB", "OD", "AS", "BR"],
-  "result": true,
-  "proof": "BASE64_PROOF_STRING_12345",
-  "nonce": "uuid-4",
-  "issuer": "UIDAI",
-  "credentialHash": "hash123"
-}
-
-- Boolean check
-{
-  "documentType": "Aadhaar",
-  "predicateType": "boolean",
-  "predicate": "photo verified",
-  "value": true,
-  "expected": true,
-  "result": true,
-  "proof": "BASE64_PROOF_STRING_12345",
-  "nonce": "uuid-5",
-  "issuer": "UIDAI",
-  "credentialHash": "hash123"
-}
-
-- Date comparison
-{
-  "documentType": "Aadhaar",
-  "predicateType": "date",
-  "predicate": "issued after 2020",
-  "value": "2022-03-01",
-  "operator": ">",
-  "compareTo": "2020-01-01",
-  "result": true,
-  "proof": "BASE64_PROOF_STRING_12345",
-  "nonce": "uuid-6",
-  "issuer": "UIDAI",
-  "credentialHash": "hash123"
-}
-
-- String match
-{
-  "documentType": "Aadhaar",
-  "predicateType": "string",
-  "predicate": "issuer name match",
-  "value": "UIDAI",
-  "expected": "UIDAI",
-  "result": true,
-  "proof": "BASE64_PROOF_STRING_12345",
-  "nonce": "uuid-7",
-  "issuer": "UIDAI",
-  "credentialHash": "hash123"
-}
-
-- Hash match
-{
-  "documentType": "Aadhaar",
-  "predicateType": "hash",
-  "predicate": "token hash match",
-  "value": "abc123hash",
-  "expectedHash": "abc123hash",
-  "result": true,
-  "proof": "BASE64_PROOF_STRING_12345",
-  "nonce": "uuid-8",
-  "issuer": "UIDAI",
-  "credentialHash": "hash123"
-}
-
-- Existence check
-{
-  "documentType": "Aadhaar",
-  "predicateType": "existence",
-  "predicate": "address exists",
-  "value": "Kolkata",
-  "result": true,
-  "proof": "BASE64_PROOF_STRING_12345",
-  "nonce": "uuid-9",
-  "issuer": "UIDAI",
-  "credentialHash": "hash123"
-}
-
-- Cross-field consistency check
-{
-  "documentType": "Aadhaar",
-  "predicateType": "cross-field",
-  "predicate": "dob matches age",
-  "dob": "2000-01-01",
-  "age": 25,
-  "result": true,
-  "proof": "BASE64_PROOF_STRING_12345",
-  "nonce": "uuid-10",
-  "issuer": "UIDAI",
-  "credentialHash": "hash123"
-}
-
-- Derived predicates
-{
-  "documentType": "Aadhaar",
-  "predicateType": "derived",
-  "predicate": "income eligibility",
-  "income": 600000,
-  "threshold": 500000,
-  "citizenship": "India",
-  "result": true,
-  "proof": "BASE64_PROOF_STRING_12345",
-  "nonce": "uuid-11",
-  "issuer": "UIDAI",
-  "credentialHash": "hash123"
-}
-
-```
-
-# Some Questions 
+Example :-
 ```bash
-Q How ZKP handles privacy vs trust tradeoff
-```
-```bash
-Q Why not just use database login?
-```
-```bash
-Q Why ZKP is called “trust minimization”
-```
-```bash
-Q How decentralized identity works
-```
-```bash
-Q Real attacks ZKP prevents
-```
-```bash
-Q How to justify your architecture
-```
-```bash
-Q How to justify your architecture
+{
+  "id": "fa1e98e3fae3c31a1caf93f8cbf12466",
+  "nonce": "3c9657eda42d19c52aba00b7c0ad2b41",
+  "nullifier": "fc153fa1aa058b3e6104426d2344136dd9fdde9dbcd8165e12db0141608c1397",
+  "proofs": [
+    {
+      "attribute": "fullName",
+      "proof": "AAgABJVSc/3r9PlorB5Sx4l1YwpUekWAVs/gImRMG1ymGh04ga…mapCjWACp4N/mPE+grZJibaV45bKEK9A731AVIGEpHY0EZEA=",
+      "revealIndices": [0]
+    }
+  ]
+}
 ```
