@@ -45,7 +45,7 @@ The system is divided into three main decentralized modules:
 
 ### 3. Visual Workflow Chart
 
-```mermaid
+```text
 sequenceDiagram
     Justin as User (Wallet / Frontend)
     Gov. of India as Issuer
