@@ -1,41 +1,5 @@
-
-# Flow :-
-```bash
-Verifier creates proof request
-        ↓
-Request encoded into QR / link
-        ↓
-User scans with wallet
-        ↓
-Wallet checks request
-        ↓
-User selects credential
-        ↓
-Wallet generates BBS proof
-        ↓
-Wallet sends proof response
-        ↓
-Verifier verifies proof
-        ↓
-Decision (accept / reject)
-```
-
-# Architecture :-
-```bash
-Verifier backend
-     ↓
- QR generator
-     ↓
- User wallet
-     ↓
- Proof generator
-     ↓
- Verifier API
-     ↓
- Decision engine
-```
----
-# Schema for different certificates :-
+# Techninal Informations used in the project :-
+## Schema for different certificates :-
 ```  bash
 - Aadhaar: [
         "fullName", "dob", "gender", "address", "photoVerified",
@@ -63,7 +27,7 @@ Verifier backend
 - "10thAdmit": ["fullName", "dob", "school", "board", "rollNumber", "issuer",]
 ```
 ---
-# Types of predicate :-
+## Types of predicate :-
 ```bash
 
   "Aadhaar": {
@@ -154,7 +118,7 @@ Hash → BBS+ preferred
 Selective disclosure → BBS+ only
 ```
 ---
-# REQUEST SCHEMAS
+## REQUEST SCHEMAS
 ### Verifier requests from the user (or wallet) :-
 ```bash
 (Verifier → Wallet)
@@ -231,7 +195,7 @@ Example :-
   ]
 }
 ```
-# RESPONSE SCHEMAS
+## RESPONSE SCHEMAS
 ### Issuer responses to the user (or wallet) :-
 ```bash
 (Issuer → Wallet)
