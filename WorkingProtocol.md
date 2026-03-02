@@ -51,34 +51,41 @@ The system is divided into three main decentralized modules:
 
 #### Phase A: Issuance
 - Justin->>Gov. of India: Submit e-ID Form Data
+
 ![Submitting e-ID](images/SelectDoc.png)
 ![Submitting e-ID](images/UserFormToIssuer.png)
 - Gov. of India-->>Justin: Return Digitally Signed Credential
 - Note over Justin: Store data in Local Storage
-![Submitting e-ID](images/EmptyWallet.png)
-![Submitting e-ID](images/VerifierSearch.png)
+
+![Empty Wallet](images/EmptyWallet.png)
+![Wallet](images/Wallet.png)
 
 #### Phase B: Proof Request
 - Bar Security->>Justin: Display QR Code (Attributes required + Nonce)
-![Submitting e-ID](images/Verifier.png)
-![Submitting e-ID](images/Wallet.png)
-![Submitting e-ID](images/QRCodeByVerifier.png)
+
+![Verifier](images/Verifier.png)
+![Searching Attributes](images/VerifierSearch.png)
+![QR Generated](images/QRCodeByVerifier.png)
 - Justin->>Justin: Scan QR Code & Parse
-![Submitting e-ID](images/RequestScanQRCode.png)
+
+![Scan QR](images/ScanQRCode.png)
 
 #### Phase C: Frontend Proof Generation
 - Justin->>Justin: Route to BBS+ or Groth16/Plonk
 - Justin->>Justin: Generate ZK Proof locally
 - Justin->>Justin: Generate Nullifier
-![Submitting e-ID](images/SelectDocForProof.png)
-![Submitting e-ID](images/ProofGenerated.png)
+
+![Select Credential](images/SelectDocForProof.png)
+![Proof Generated](images/ProofGenerated.png)
 
 #### Bar Security: Phase D: Verification
 - Justin->>Bar Security: Send ZK Proof + Nullifier
-![Submitting e-ID](images/ProofGenerated.png)
+
+![Proof Sent to verifier](images/ProofGenerated.png)
 - Bar Security->>Bar Security: Validate Proof & Check Nullifier
 - Bar Security-->>Justin: Grant/Deny Access Result
-![Submitting e-ID](images/ListOfVerifiedUsers.png)
+
+![Verified Users](images/ListOfVerifiedUsers.png)
     
 ### Predicate Mapping
 **Handled by BBS+ (Implemented):**
