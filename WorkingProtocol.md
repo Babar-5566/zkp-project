@@ -44,32 +44,42 @@ The system is divided into three main decentralized modules:
 11. **Result:** The Verifier grants or denies access based on the cryptographic response.  
 
 ### 3. Visual Workflow Chart
+#### Roles :-
+- Justin as User (Wallet / Frontend)
+- Gov. of India as Issuer
+- Bar Security as Verifier (Backend)
 
-```text
-sequenceDiagram
-    Justin as User (Wallet / Frontend)
-    Gov. of India as Issuer
-    Bar Security as Verifier (Backend)
+#### Phase A: Issuance
+- Justin->>Gov. of India: Submit e-ID Form Data
+![Submitting e-ID](images/SelectDoc.png)
+![Submitting e-ID](images/UserFormToIssuer.png)
+- Gov. of India-->>Justin: Return Digitally Signed Credential
+- Note over Justin: Store data in Local Storage
+![Submitting e-ID](images/EmptyWallet.png)
+![Submitting e-ID](images/VerifierSearch.png)
 
-    Note over Justin, Gov. of India: Phase A: Issuance
-    Justin->>Gov. of India: Submit e-ID Form Data
-    Gov. of India-->>Justin: Return Digitally Signed Credential
-    Note over Justin: Store data in Local Storage
+#### Phase B: Proof Request
+- Bar Security->>Justin: Display QR Code (Attributes required + Nonce)
+![Submitting e-ID](images/Verifier.png)
+![Submitting e-ID](images/Wallet.png)
+![Submitting e-ID](images/QRCodeByVerifier.png)
+- Justin->>Justin: Scan QR Code & Parse
+![Submitting e-ID](images/RequestScanQRCode.png)
 
-    Note over Justin, Bar Security: Phase B: Proof Request
-    Bar Security->>Justin: Display QR Code (Attributes required + Nonce)
-    Justin->>Justin: Scan QR Code & Parse Request
+#### Phase C: Frontend Proof Generation
+- Justin->>Justin: Route to BBS+ or Groth16/Plonk
+- Justin->>Justin: Generate ZK Proof locally
+- Justin->>Justin: Generate Nullifier
+![Submitting e-ID](images/SelectDocForProof.png)
+![Submitting e-ID](images/ProofGenerated.png)
 
-    Note over Justin: Phase C: Frontend Proof Generation
-    Justin->>Justin: Route to BBS+ or Groth16/Plonk
-    Justin->>Justin: Generate ZK Proof locally
-    Justin->>Justin: Generate Nullifier
-
-    Note over Justin, Bar Security: Phase D: Verification
-    Justin->>Bar Security: Send ZK Proof + Nullifier
-    Bar Security->>Bar Security: Validate Proof & Check Nullifier
-    Bar Security-->>Justin: Grant/Deny Access Result
-```
+#### Bar Security: Phase D: Verification
+- Justin->>Bar Security: Send ZK Proof + Nullifier
+![Submitting e-ID](images/ProofGenerated.png)
+- Bar Security->>Bar Security: Validate Proof & Check Nullifier
+- Bar Security-->>Justin: Grant/Deny Access Result
+![Submitting e-ID](images/ListOfVerifiedUsers.png)
+    
 ### Predicate Mapping
 **Handled by BBS+ (Implemented):**
 - `checkExistence`: Proves the Issuer signed the attribute without revealing its value.  
