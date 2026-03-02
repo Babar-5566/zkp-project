@@ -3,19 +3,38 @@
 ## Installation and Setup :-
 ### Prerequisites
 - Node.js installed on the machine
-### Backend Setup
+### 1. Issuer Backend Setup
 ```bash
-cd backend
+cd backend/issuer
 ```
 ```bash
-npm install
+npm init -y
 ```
 ```bash
-npm start
+npm install @mattrglobal/bbs-signatures cors dotenv express uuid
+```
+```bash
+node server.js
+```
+### 2. Verifier Backend Setup
+```bash
+cd backend/verifiers/barVerifier
+```
+```bash
+npm init -y
+```
+```bash
+npm install @mattrglobal/bbs-signatures cors dotenv express uuid
+```
+```bash
+node server.js
 ```
 ### Frontend Setup
 ```bash
 cd frontend
+```
+```bash
+npm install @mattrglobal/bbs-signatures axios buffer clsx framer-motion html5-qrcode lucide-react process qrcode.react tailwind-merge react react-dom
 ```
 ```bash
 npm install
