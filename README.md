@@ -1,4 +1,29 @@
-# Techninal Informations used in the project :-
+# Techninal Informations used in the project 
+---
+## Installation and Setup :-
+### Prerequisites
+- Node.js installed on the machine
+### Backend Setup
+```bash
+cd backend
+```
+```bash
+npm install
+```
+```bash
+npm start
+```
+### Frontend Setup
+```bash
+cd frontend
+```
+```bash
+npm install
+```
+```bash
+npm run dev
+```
+---
 ## Schema for different certificates :-
 ```  bash
 - Aadhaar: [
