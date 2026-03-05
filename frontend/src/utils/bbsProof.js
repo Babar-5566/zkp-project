@@ -37,9 +37,9 @@ export async function generateBbsProof({ mapping, request, context = "Default" }
       if (!vc || !vc.proof || !vc.proof.signature) {
         throw new Error(`Invalid VC for ${attribute}`)
       }
-      
+
       console.log(vc);
-      
+
       const messageBytes = vc.proof.signature.messages.map(attr =>
         new TextEncoder().encode(attr)
       )
@@ -91,6 +91,34 @@ export async function generateBbsProof({ mapping, request, context = "Default" }
 
   } catch (err) {
     console.error("BBS+ proof generation failed:", err)
+    throw err
+  }
+}
+
+/**
+ * Generate a zk-SNARK proof for numeric/range predicates (e.g., age >= 18)
+ * Calls wallet backend to generate Groth16 proof server-side
+ * @param {string} dob - Date of birth in DD/MM/YYYY format
+ * @param {number} threshold - Minimum age required
+ * @returns {Promise<{proof: Object, publicSignals: Array}>}
+ */
+export async function generateZkSnarkProof(dob, threshold) {
+  try {
+    const response = await fetch("http://localhost:5000/wallet/zkproof", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dob, threshold: parseInt(threshold) })
+    })
+
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(err.error || "zk-SNARK proof generation failed")
+    }
+
+    const { proof, publicSignals } = await response.json()
+    return { proof, publicSignals }
+  } catch (err) {
+    console.error("zk-SNARK proof generation failed:", err)
     throw err
   }
 }

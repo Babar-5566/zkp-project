@@ -67,6 +67,46 @@ app.get("/wallet/proveAge", async (req, res) => {
     }
 });
 
+/**
+ * Generate zk-SNARK proof (age >= threshold)
+ * Body: { dob: "DD/MM/YYYY", threshold: 18 }
+ */
+const { generateAgeProof } = require("./prover");
+
+app.post("/wallet/zkproof", async (req, res) => {
+    try {
+        const { dob, threshold } = req.body;
+
+        if (!dob || !threshold) {
+            return res.status(400).json({ error: "Missing dob or threshold" });
+        }
+
+        // Calculate age from dob string (DD/MM/YYYY)
+        const parts = dob.split("/");
+        const birthDate = new Date(
+            parseInt(parts[2]),      // year
+            parseInt(parts[1]) - 1,  // month (0-indexed)
+            parseInt(parts[0])       // day
+        );
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+
+        console.log(`🔐 zk-SNARK: Generating proof for age=${age}, threshold=${threshold}`);
+
+        const { proof, publicSignals } = await generateAgeProof(age, parseInt(threshold));
+
+        res.json({ proof, publicSignals });
+
+    } catch (err) {
+        console.error("zk-SNARK proof generation failed:", err);
+        res.status(500).json({ error: "zk-SNARK proof generation failed: " + err.message });
+    }
+});
+
 /* ================= SERVER START ================= */
 
 const PORT = 5000;

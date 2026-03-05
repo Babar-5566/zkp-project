@@ -169,7 +169,7 @@ export const predicateInfo = {
   },
 
   "numeric/range": {
-    message: "It checks whether the numeric value satisfies the specified range (e.g. +18, -5).",
+    message: "zk-SNARK age check — enter minimum age. Proves age ≥ threshold without revealing DOB.",
     requiresInput: true,
     inputType: "numeric"
   },

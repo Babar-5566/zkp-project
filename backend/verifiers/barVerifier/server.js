@@ -111,11 +111,32 @@ app.get("/request", (req, res) => {
   res.json(requests[id]);
 });
 
+// === Server Metrics for Telemetry ===
+let lastVerifyTiming = null;
+
+app.get("/metrics", (req, res) => {
+  const mem = process.memoryUsage();
+  const startCpu = process.cpuUsage();
+  const startTime = Date.now();
+  setTimeout(() => {
+    const endCpu = process.cpuUsage(startCpu);
+    const elapsed = (Date.now() - startTime) * 1000;
+    const cpuPercent = ((endCpu.user + endCpu.system) / elapsed * 100).toFixed(1);
+    res.json({
+      cpuPercent,
+      memoryMB: (mem.rss / 1024 / 1024).toFixed(1),
+      uptime: process.uptime(),
+      lastVerifyTiming
+    });
+  }, 100);
+});
+
 app.post("/verify", async (req, res) => {
+  const verifyStart = Date.now();
   try {
     console.log(req.body.messages);
-    
-    const { id, nonce, proofs, nullifier } = req.body;
+
+    const { id, nonce, proofs, nullifier, zkProof } = req.body;
 
     if (!nullifier) {
       return res.status(400).json({ error: "Nullifier is required." });
@@ -159,7 +180,7 @@ app.post("/verify", async (req, res) => {
       return res.status(400).json({ error: "No proofs provided" });
     }
 
-    // 5️⃣ Cryptographically verify proofs
+    // 5️⃣ Cryptographically verify BBS+ proofs
     const result = await verifyProof({
       proofs,
       nonce,
@@ -170,15 +191,30 @@ app.post("/verify", async (req, res) => {
       return res.json({ access: "DENIED" });
     }
 
+    // 5.5️⃣ Verify zk-SNARK proof (if present)
+    if (zkProof && zkProof.proof && zkProof.publicSignals) {
+      console.log("🔐 zk-SNARK proof received. Verifying...");
+      const { verifyAgeProof } = require("./zkVerifier");
+      const zkValid = await verifyAgeProof(zkProof.proof, zkProof.publicSignals);
+
+      if (!zkValid) {
+        console.log("❌ zk-SNARK proof verification failed!");
+        return res.json({ access: "DENIED", reason: "zk-SNARK proof invalid" });
+      }
+      console.log("✅ zk-SNARK proof verified successfully!");
+    }
+
     // 6️⃣ Mark request as verified
     request.status = "verified";
+    const verifyTimeMs = Date.now() - verifyStart;
+    lastVerifyTiming = { verifyTimeMs, timestamp: new Date().toISOString() };
 
     request.verifiedUsers.push({
       subjectId: proofs[0]?.subjectId || nullifier,
       timestamp: new Date().toISOString()
     });
 
-    return res.json({ access: "GRANTED" });
+    return res.json({ access: "GRANTED", verifyTimeMs });
 
   } catch (err) {
     console.error("Verification failed:", err);
