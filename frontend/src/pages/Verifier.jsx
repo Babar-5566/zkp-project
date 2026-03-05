@@ -257,7 +257,12 @@ const Verifier = () => {
       setStatus("success")
 
       console.log(proof);
-      console.log(proofRequest);
+      console.log(
+        "id:" + proofRequest.id +
+        "nonce:" + proofRequest.nonce +
+        "proofs:" + proof +
+        "nullifier:" + nullifier
+      );
 
       // send proof to verifier backend
       const response = await fetch(
@@ -786,12 +791,8 @@ const Verifier = () => {
                 Scan to Verify
               </h3>
 
-              <div className="relative flex items-center justify-center w-[300px] h-[300px] overflow-hidden rounded-2xl bg-slate-100">
-                {/* The Running Border (Rotating Gradient) */}
-                <div className="absolute w-[150%] h-[150%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(transparent,transparent,#e66000,transparent)]" />
-
-                {/* The White Box (Slightly larger than the QR) */}
-                <div className="relative z-10 flex items-center justify-center w-[290px] h-[290px] bg-white rounded-xl">
+              <div className="relative p-[6px] rounded-2xl bg-gradient-to-r from-orange-500 to-cyan-500 animate-pulse">
+                <div className="bg-white rounded-xl p-4">
                   <QRCodeCanvas value={qrLink} size={260} />
                 </div>
               </div>
