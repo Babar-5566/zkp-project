@@ -8,7 +8,14 @@ import { useWallet } from '../context/WalletContext';
 import { getFieldsByIdType } from "../utils/schema";
 import { predicateInfo } from "../utils/schema";
 import { generateBbsProof } from "../utils/bbsProver";
-import { generateZkSnarkProof } from "../utils/grothProver";
+import {
+  generateZkSnarkProof,
+  generateEqualityProof,
+  generateRangeProof,
+  generateYearProof,
+  generateDateProof,
+  generateHashProof
+} from "../utils/grothProver";
 import { useTelemetry } from '../context/TelemetryContext';
 import { getAllSchemaFields } from "../utils/schema";
 import { QRCodeCanvas } from "qrcode.react";
@@ -238,30 +245,63 @@ const Verifier = () => {
         request: proofRequest.proofRequest ?? proofRequest
       })
 
-      // 🔐 Generate zk-SNARK proof if numeric/range predicate on dob exists
-      let zkProof = null
+      // 🔐 Generate zk-SNARK proofs for ALL Groth16 predicates
+      const zkProofs = {}
+      let zkFailed = false
       const currentRequest = proofRequest.proofRequest ?? proofRequest
-      const rangePredicates = (currentRequest.requested_predicates || []).filter(
-        p => p.predicate === "numeric/range" && p.name === "dob"
+      const grothPredicates = (currentRequest.requested_predicates || []).filter(
+        p => ['numeric/range', 'equality', 'date comparison', 'hash'].includes(p.predicate)
       )
 
-      if (rangePredicates.length > 0) {
-        addLog("Generating zk-SNARK proof (age check)...")
-        const threshold = Math.abs(parseInt(rangePredicates[0].value || "18"))
-        // Find dob from the selected credential
-        const dobVc = selectedMapping["dob"]
-        const dob = dobVc?.credentialSubject?.dob
+      for (const pred of grothPredicates) {
+        try {
+          const vc = selectedMapping[pred.name]
+          const fieldVal = vc?.credentialSubject?.[pred.name]
 
-        if (dob) {
-          try {
-            zkProof = await generateZkSnarkProof(dob, threshold)
-            addLog("zk-SNARK proof generated ✅", "success")
-          } catch (zkErr) {
-            addLog("zk-SNARK proof generation failed ❌", "error")
-            addLog(zkErr.message || "Unknown zk-SNARK error")
+          if (pred.predicate === 'numeric/range' && pred.name === 'dob') {
+            addLog(`Generating zk-SNARK proof (age check)...`)
+            const threshold = Math.abs(parseInt(pred.value || '18'))
+            if (fieldVal) {
+              zkProofs.ageProof = await generateZkSnarkProof(fieldVal, threshold)
+              addLog('Age proof generated ✅', 'success')
+            }
+          } else if (pred.predicate === 'numeric/range' && pred.name === 'passingYear') {
+            addLog(`Generating zk-SNARK proof (year check)...`)
+            zkProofs.yearProof = await generateYearProof(fieldVal, pred.value)
+            addLog('Year proof generated ✅', 'success')
+          } else if (pred.predicate === 'numeric/range' && pred.name === 'marks') {
+            addLog(`Generating zk-SNARK proof (marks range check)...`)
+            zkProofs.rangeProof = await generateRangeProof(fieldVal, pred.value)
+            addLog('Range proof generated ✅', 'success')
+          } else if (pred.predicate === 'numeric/range') {
+            addLog(`Generating zk-SNARK proof (age check for ${pred.name})...`)
+            const threshold = Math.abs(parseInt(pred.value || '18'))
+            if (fieldVal) {
+              zkProofs[`age_${pred.name}`] = await generateZkSnarkProof(fieldVal, threshold)
+              addLog(`Age proof for ${pred.name} generated ✅`, 'success')
+            }
+          } else if (pred.predicate === 'equality') {
+            addLog(`Generating zk-SNARK proof (equality: ${pred.name})...`)
+            zkProofs[`eq_${pred.name}`] = await generateEqualityProof(pred.name, fieldVal, pred.value)
+            addLog(`Equality proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'date comparison') {
+            addLog(`Generating zk-SNARK proof (date: ${pred.name})...`)
+            zkProofs[`date_${pred.name}`] = await generateDateProof(fieldVal, pred.value)
+            addLog(`Date proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'hash') {
+            addLog(`Generating zk-SNARK proof (hash: ${pred.name})...`)
+            zkProofs[`hash_${pred.name}`] = await generateHashProof(fieldVal, pred.value)
+            addLog(`Hash proof for ${pred.name} generated ✅`, 'success')
           }
+        } catch (zkErr) {
+          addLog(`zk-SNARK proof for ${pred.name}:${pred.predicate} failed ❌`, 'error')
+          addLog(zkErr.message || 'Unknown zk-SNARK error')
+          zkFailed = true
         }
       }
+
+      // backward compat: set zkProof for the age check
+      const zkProof = zkProofs.ageProof || null
 
       // 🔐 Generate nullifier FIRST (needed for both success and failure flows)
       const holderSecret = localStorage.getItem("holderSecret")
@@ -279,9 +319,9 @@ const Verifier = () => {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('')
 
-      // If zk-SNARK was required but failed, still notify verifier
-      if (rangePredicates.length > 0 && !zkProof) {
-        const failureReason = "zk-SNARK age proof could not be generated — age below threshold"
+      // If any zk-SNARK was required but failed, still notify verifier
+      if (grothPredicates.length > 0 && zkFailed) {
+        const failureReason = "zk-SNARK proof could not be generated — constraint not satisfied"
 
         // Send failure info to verifier with nullifier
         const failPayload = {
@@ -329,8 +369,9 @@ const Verifier = () => {
         proofs: proof,
         nullifier
       }
-      if (zkProof) {
-        verifyPayload.zkProof = zkProof
+      if (Object.keys(zkProofs).length > 0) {
+        verifyPayload.zkProof = zkProof  // backward compat for age
+        verifyPayload.zkProofs = zkProofs  // all proofs
       }
 
       const response = await fetch(
@@ -456,35 +497,80 @@ const Verifier = () => {
       })
       const bbsTime = performance.now() - bbsStart
 
-      // 🔐 Generate zk-SNARK proof if numeric/range predicate on dob exists
-      let zkProofResult = null
-      const rangePredsLocal = (effectiveRequest.requested_predicates || []).filter(
-        p => p.predicate === "numeric/range" && p.name === "dob"
+      // 🔐 Generate zk-SNARK proofs for ALL Groth16 predicates
+      const zkProofsLocal = {}
+      let zkFailedLocal = false
+      const grothPredsLocal = (effectiveRequest.requested_predicates || []).filter(
+        p => ['numeric/range', 'equality', 'date comparison', 'hash'].includes(p.predicate)
       )
 
-      if (rangePredsLocal.length > 0) {
-        addLog("Generating zk-SNARK proof (age check)...")
-        const thresholdVal = Math.abs(parseInt(rangePredsLocal[0].value || "18"))
-        // Get dob from the credential's credentialSubject
-        const dobVal = vc?.credentialSubject?.dob || effectiveMapping["dob"]?.credentialSubject?.dob
+      for (const pred of grothPredsLocal) {
+        try {
+          const fieldVal = vc?.credentialSubject?.[pred.name] || effectiveMapping[pred.name]?.credentialSubject?.[pred.name]
 
-        if (dobVal) {
-          try {
+          if (pred.predicate === 'numeric/range' && pred.name === 'dob') {
+            addLog('Generating zk-SNARK proof (age check)...')
+            const thresholdVal = Math.abs(parseInt(pred.value || '18'))
+            if (fieldVal) {
+              const zkStart = performance.now()
+              zkProofsLocal.ageProof = await generateZkSnarkProof(fieldVal, thresholdVal)
+              zkSnarkTime += performance.now() - zkStart
+              addLog('Age proof generated ✅', 'success')
+            } else {
+              addLog('No DOB found in credential, skipping age check', 'warn')
+            }
+          } else if (pred.predicate === 'numeric/range' && pred.name === 'passingYear') {
+            addLog('Generating zk-SNARK proof (year check)...')
             const zkStart = performance.now()
-            zkProofResult = await generateZkSnarkProof(dobVal, thresholdVal)
-            zkSnarkTime = performance.now() - zkStart
-            addLog("zk-SNARK proof generated ✅", "success")
-          } catch (zkE) {
-            addLog("zk-SNARK proof generation failed ❌", "error")
-            addLog(zkE.message || "Unknown error")
+            zkProofsLocal.yearProof = await generateYearProof(fieldVal, pred.value)
+            zkSnarkTime += performance.now() - zkStart
+            addLog('Year proof generated ✅', 'success')
+          } else if (pred.predicate === 'numeric/range' && pred.name === 'marks') {
+            addLog('Generating zk-SNARK proof (marks range check)...')
+            const zkStart = performance.now()
+            zkProofsLocal.rangeProof = await generateRangeProof(fieldVal, pred.value)
+            zkSnarkTime += performance.now() - zkStart
+            addLog('Range proof generated ✅', 'success')
+          } else if (pred.predicate === 'numeric/range') {
+            addLog(`Generating zk-SNARK proof (age check for ${pred.name})...`)
+            const thresholdVal = Math.abs(parseInt(pred.value || '18'))
+            if (fieldVal) {
+              const zkStart = performance.now()
+              zkProofsLocal[`age_${pred.name}`] = await generateZkSnarkProof(fieldVal, thresholdVal)
+              zkSnarkTime += performance.now() - zkStart
+              addLog(`Age proof for ${pred.name} generated ✅`, 'success')
+            }
+          } else if (pred.predicate === 'equality') {
+            addLog(`Generating zk-SNARK proof (equality: ${pred.name})...`)
+            const zkStart = performance.now()
+            zkProofsLocal[`eq_${pred.name}`] = await generateEqualityProof(pred.name, fieldVal, pred.value)
+            zkSnarkTime += performance.now() - zkStart
+            addLog(`Equality proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'date comparison') {
+            addLog(`Generating zk-SNARK proof (date: ${pred.name})...`)
+            const zkStart = performance.now()
+            zkProofsLocal[`date_${pred.name}`] = await generateDateProof(fieldVal, pred.value)
+            zkSnarkTime += performance.now() - zkStart
+            addLog(`Date proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'hash') {
+            addLog(`Generating zk-SNARK proof (hash: ${pred.name})...`)
+            const zkStart = performance.now()
+            zkProofsLocal[`hash_${pred.name}`] = await generateHashProof(fieldVal, pred.value)
+            zkSnarkTime += performance.now() - zkStart
+            addLog(`Hash proof for ${pred.name} generated ✅`, 'success')
           }
-        } else {
-          addLog("No DOB found in credential, skipping zk-SNARK", "warn")
+        } catch (zkE) {
+          addLog(`zk-SNARK proof for ${pred.name}:${pred.predicate} failed ❌`, 'error')
+          addLog(zkE.message || 'Unknown error')
+          zkFailedLocal = true
         }
       }
 
+      // backward compat
+      const zkProofResult = zkProofsLocal.ageProof || null
+
       // If zk-SNARK was required but failed, report to verifier if possible
-      if (rangePredsLocal.length > 0 && !zkProofResult) {
+      if (grothPredsLocal.length > 0 && zkFailedLocal) {
         addLog("Proof generation failed — zk-SNARK required but could not be generated ❌", "error")
 
         // If there's a real verifier endpoint, report the failure with nullifier
@@ -509,7 +595,7 @@ const Verifier = () => {
                   proofs: proof,
                   nullifier: failNullifier,
                   verificationFailed: true,
-                  failureReason: "zk-SNARK age proof could not be generated — age below threshold"
+                  failureReason: "zk-SNARK proof could not be generated — constraint not satisfied"
                 })
               })
               addLog("Failure reported to verifier with nullifier", "error")
@@ -557,7 +643,7 @@ const Verifier = () => {
         cpuUsage: serverCpu.toFixed(1),
         ramUsage: serverRam.toFixed(1),
         proofGeneratedBy: vc?.credentialSubject?.fullName || 'Unknown',
-        proofType: zkProofResult ? 'BBS+ + zk-SNARK (Groth16)' : 'BBS+ Only'
+        proofType: Object.keys(zkProofsLocal).length > 0 ? `BBS+ + zk-SNARK (Groth16 × ${Object.keys(zkProofsLocal).length})` : 'BBS+ Only'
       })
 
       setProofData(proof)

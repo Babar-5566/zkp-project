@@ -63,51 +63,51 @@ export const getFieldsByIdType = (idType) => {
   switch (idType) {
     case 'Aadhaar Card':
       return [
-        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'equality', 'cross-field'] },
-        { name: 'aadhaarNumber', label: 'Aadhaar Number', type: 'number', icon: Hash, placeholder: '1234 5678 XXXX', required: true, maxLength: 12, predicates: ['existence', 'equality', 'hash'] },
-        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'date comparison', 'numeric/range', 'cross-field'] },
-        { name: 'gender', label: 'Gender', type: 'custom-select', options: ['Male', 'Female', 'Other'], icon: Users, required: true, predicates: ['existence', 'equality', 'set membership'] },
-        { name: 'address', label: 'Address', type: 'text', icon: MapPin, required: true, predicates: ['existence', 'string match', 'extract location'] },
-        { name: 'photoVerified', label: 'Photo KYC', type: 'custom-select', options: ['Yes', 'No'], icon: UserCheck, required: true, predicates: ['existence', 'boolean'] },
+        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'aadhaarNumber', label: 'Aadhaar Number', type: 'number', icon: Hash, placeholder: '1234 5678 XXXX', required: true, maxLength: 12, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
+        { name: 'gender', label: 'Gender', type: 'custom-select', options: ['Male', 'Female', 'Other'], icon: Users, required: true, predicates: ['existence', 'reveal', 'equality'] },
+        { name: 'address', label: 'Address', type: 'text', icon: MapPin, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'photoVerified', label: 'Photo KYC', type: 'custom-select', options: ['Yes', 'No'], icon: UserCheck, required: true, predicates: ['existence', 'reveal', 'equality'] },
         ...commonAuth
       ];
 
     case 'PAN Card':
       return [
-        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'equality', 'cross-field'] },
-        { name: 'panID', label: 'PAN Number', type: 'text', icon: CreditCard, placeholder: 'ABCDE1234F', required: true, predicates: ['existence', 'equality', 'hash'] },
-        { name: 'guardianName', label: 'Father/Guardian Name', type: 'text', icon: Users, required: true, predicates: ['existence', 'equality'] },
-        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'date comparison', 'numeric/range', 'cross-field'] },
+        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'panID', label: 'PAN Number', type: 'text', icon: CreditCard, placeholder: 'ABCDE1234F', required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'guardianName', label: 'Father/Guardian Name', type: 'text', icon: Users, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
         ...commonAuth
       ];
 
     case 'Passport':
       return [
-        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'equality', 'cross-field'] },
-        { name: 'passportID', label: 'Passport Number', type: 'text', icon: Plane, placeholder: 'A1234567', required: true, predicates: ['existence', 'equality', 'hash'] },
-        { name: 'nationality', label: 'Nationality', type: 'text', icon: Flag, defaultValue: "India", required: true, readOnly: true, predicates: ['existence', 'equality', 'set membership'] },
-        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'date comparison', 'numeric/range', 'cross-field'] },
-        { name: 'expiryDate', label: 'Date of Expiry', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'date comparison'] },
+        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'passportID', label: 'Passport Number', type: 'text', icon: Plane, placeholder: 'A1234567', required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'nationality', label: 'Nationality', type: 'text', icon: Flag, defaultValue: "India", required: true, readOnly: true, predicates: ['existence', 'reveal', 'equality'] },
+        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
+        { name: 'expiryDate', label: 'Date of Expiry', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison'] },
         ...commonAuth
       ];
 
     case 'Driving Licence':
       return [
-        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'equality', 'cross-field'] },
-        { name: 'licenseID', label: 'License Number', type: 'text', icon: Car, placeholder: 'DL-1420110012345', required: true, predicates: ['existence', 'equality', 'hash'] },
-        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'date comparison', 'numeric/range', 'cross-field'] },
-        { name: 'issueDate', label: 'Issue Date', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'date comparison'] },
-        { name: 'expiryDate', label: 'Valid Till', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'date comparison'] },
+        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'licenseID', label: 'License Number', type: 'text', icon: Car, placeholder: 'DL-1420110012345', required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
+        { name: 'issueDate', label: 'Issue Date', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison'] },
+        { name: 'expiryDate', label: 'Valid Till', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison'] },
         ...commonAuth
       ];
 
     case 'Birth Certificate':
       return [
-        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'equality', 'cross-field'] },
-        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'date comparison', 'numeric/range', 'cross-field'] },
-        { name: 'placeOfBirth', label: 'Place of Birth', type: 'text', icon: MapPin, required: true, predicates: ['existence', 'string match'] },
-        { name: 'fatherName', label: "Father's Name", type: 'text', icon: Users, required: true, predicates: ['existence', 'equality'] },
-        { name: 'motherName', label: "Mother's Name", type: 'text', icon: Users, required: true, predicates: ['existence', 'equality'] },
+        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
+        { name: 'placeOfBirth', label: 'Place of Birth', type: 'text', icon: MapPin, required: true, predicates: ['existence', 'reveal'] },
+        { name: 'fatherName', label: "Father's Name", type: 'text', icon: Users, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'motherName', label: "Mother's Name", type: 'text', icon: Users, required: true, predicates: ['existence', 'reveal', 'hash'] },
         ...commonAuth
       ];
 
@@ -115,33 +115,33 @@ export const getFieldsByIdType = (idType) => {
     case '10th Admit Card':
     case '12th Admit Card':
       return [
-        { name: 'fullName', label: 'Student Name', type: 'text', icon: User, required: true, predicates: ['existence', 'equality', 'cross-field'] },
-        { name: 'board', label: 'Board Name', type: 'custom-board', icon: BookOpen, placeholder: 'Select Board', required: true, predicates: ['existence', 'set membership', 'equality'] },
-        { name: 'rollNumber', label: 'Roll Number', type: 'text', icon: UserCheck, required: true, simulateVerify: true, predicates: ['existence', 'equality', 'hash'] },
-        { name: 'school', label: 'School Name', type: 'text', icon: Building2, required: true, predicates: ['existence', 'string match', 'equality'] },
-        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'date comparison', 'numeric/range', 'cross-field'] },
+        { name: 'fullName', label: 'Student Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'board', label: 'Board Name', type: 'custom-board', icon: BookOpen, placeholder: 'Select Board', required: true, predicates: ['existence', 'reveal', 'equality'] },
+        { name: 'rollNumber', label: 'Roll Number', type: 'text', icon: UserCheck, required: true, simulateVerify: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'school', label: 'School Name', type: 'text', icon: Building2, required: true, predicates: ['existence', 'reveal'] },
+        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
         ...commonAuth
       ];
 
     case '10th Marksheet':
     case '12th Marksheet':
       return [
-        { name: 'fullName', label: 'Student Name', type: 'text', icon: User, required: true, predicates: ['existence', 'equality', 'cross-field'] },
-        { name: 'board', label: 'Board Name', type: 'custom-board', icon: BookOpen, required: true, predicates: ['existence', 'set membership', 'equality'] },
-        { name: 'rollNumber', label: 'Roll Number', type: 'text', icon: UserCheck, required: true, simulateVerify: true, predicates: ['existence', 'equality', 'hash'] },
-        { name: 'marks', label: 'Total Marks (%)', type: 'text', icon: FileText, placeholder: 'e.g. 85%', required: true, predicates: ['existence', 'numeric/range'] },
-        { name: 'school', label: 'School Name', type: 'text', icon: Building2, required: true, predicates: ['existence', 'string match', 'equality'] },
-        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'date comparison', 'numeric/range', 'cross-field'] },
+        { name: 'fullName', label: 'Student Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'board', label: 'Board Name', type: 'custom-board', icon: BookOpen, required: true, predicates: ['existence', 'reveal', 'equality'] },
+        { name: 'rollNumber', label: 'Roll Number', type: 'text', icon: UserCheck, required: true, simulateVerify: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'marks', label: 'Total Marks (%)', type: 'text', icon: FileText, placeholder: 'e.g. 85%', required: true, predicates: ['existence', 'reveal', 'numeric/range'] },
+        { name: 'school', label: 'School Name', type: 'text', icon: Building2, required: true, predicates: ['existence', 'reveal'] },
+        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
         ...commonAuth
       ];
 
     // --- UNIVERSITY LEVEL ---
     case 'University Degree':
       return [
-        { name: 'fullName', label: 'Student Name', type: 'text', icon: User, required: true, predicates: ['existence', 'equality', 'cross-field'] },
-        { name: 'university', label: 'University Name', type: 'custom-uni', icon: GraduationCap, placeholder: 'Select University', required: true, predicates: ['existence', 'string match', 'equality'] },
-        { name: 'rollNumber', label: 'Registration / Roll No', type: 'text', icon: UserCheck, required: true, simulateVerify: true, predicates: ['existence', 'equality', 'hash'] },
-        { name: 'passingYear', label: 'Year of Passing', type: 'custom-year', icon: Calendar, required: true, defaultValue: getCurrentYear, predicates: ['existence', 'numeric/range', 'cross-field'] },
+        { name: 'fullName', label: 'Student Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'university', label: 'University Name', type: 'custom-uni', icon: GraduationCap, placeholder: 'Select University', required: true, predicates: ['existence', 'reveal'] },
+        { name: 'rollNumber', label: 'Registration / Roll No', type: 'text', icon: UserCheck, required: true, simulateVerify: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'passingYear', label: 'Year of Passing', type: 'custom-year', icon: Calendar, required: true, defaultValue: getCurrentYear, predicates: ['existence', 'reveal', 'numeric/range'] },
         ...commonAuth
       ];
 
@@ -151,50 +151,67 @@ export const getFieldsByIdType = (idType) => {
 
 export const predicateInfo = {
   existence: {
-    message: "It checks whether this field exists in the digital credential.",
+    message: "Proves this field exists in the credential WITHOUT revealing its value.",
+    requiresInput: false,
+    inputType: null
+  },
+
+  reveal: {
+    message: "Reveals the actual value of this field to the verifier (BBS+ selective disclosure).",
     requiresInput: false,
     inputType: null
   },
 
   equality: {
-    message: "It checks whether this field matches the given numeric value.",
+    message: "zk-SNARK proof — proves the categorical field matches the expected value (e.g., gender, board) without revealing it.",
     requiresInput: true,
-    inputType: "text"   // signed integer
-  },
-
-  "cross-field": {
-    message: "It checks the relation between multiple fields in the credential.",
-    requiresInput: false,
-    inputType: null
+    inputType: "text"
   },
 
   "numeric/range": {
-    message: "zk-SNARK age check — enter minimum age. Proves age ≥ threshold without revealing DOB.",
+    message: "zk-SNARK proof — enter threshold. Proves value satisfies comparison (age ≥ X, marks ≥ X, year ≤ X) without revealing actual value.",
     requiresInput: true,
     inputType: "numeric"
   },
 
   "date comparison": {
-    message: "It checks whether the date satisfies the specified comparison.",
+    message: "zk-SNARK proof — proves the date satisfies a comparison without revealing the actual date.",
     requiresInput: true,
     inputType: "date"
   },
 
-  "string match": {
-    message: "It checks whether the field matches the given string or pattern.",
-    requiresInput: true,
-    inputType: "text"
-  },
-
   hash: {
-    message: "It checks whether the field matches the provided hash value.",
+    message: "zk-SNARK proof — proves the field matches a Poseidon hash without revealing the value. Use for string equality in ZK.",
     requiresInput: true,
     inputType: "hash"   // hex only
   },
 
-  "selective disclosure": {
-    message: "It reveals only this field in the proof.",
-    requiresInput: false,
-    inputType: null
-  }
-};
+  // --- v2 PLONK predicates (commented out for future implementation) ---
+  // "set membership": {
+  //   message: "PLONK proof — proves value belongs to an allowed set without revealing which one.",
+  //   requiresInput: false,
+  //   inputType: null,
+  //   comingSoon: true
+  // },
+
+  // "string match": {
+  //   message: "PLONK proof — proves a string field matches a pattern without revealing the full value.",
+  //   requiresInput: true,
+  //   inputType: "text",
+  //   comingSoon: true
+  // },
+
+  // "cross-field": {
+  //   message: "PLONK proof — proves relationships between multiple fields across credentials.",
+  //   requiresInput: false,
+  //   inputType: null,
+  //   comingSoon: true
+  // },
+
+  // "extract location": {
+  //   message: "Extracts city/state from address — not a proof predicate, utility only.",
+  //   requiresInput: false,
+  //   inputType: null,
+  //   comingSoon: true
+  // },
+};

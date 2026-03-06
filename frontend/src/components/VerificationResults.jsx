@@ -148,6 +148,21 @@ const VerificationResults = ({ requestId, onExpired }) => {
             <p className="text-slate-400 text-[10px]">
               Verified at: {new Date(user.timestamp).toLocaleTimeString()}
             </p>
+
+            {/* Revealed Attributes */}
+            {user.revealedAttributes && Object.keys(user.revealedAttributes).length > 0 && (
+              <div className="mt-2 pt-2 border-t border-slate-800">
+                <p className="text-[8px] font-black text-cyan-400 uppercase tracking-widest mb-1">
+                  Revealed Attributes
+                </p>
+                {Object.entries(user.revealedAttributes).map(([key, value]) => (
+                  <div key={key} className="flex justify-between text-[10px]">
+                    <span className="text-slate-400">{key}</span>
+                    <span className="text-white font-semibold">{value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       })}

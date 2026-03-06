@@ -137,7 +137,7 @@ app.post("/verify", async (req, res) => {
   try {
     console.log(req.body.messages);
 
-    const { id, nonce, proofs, nullifier, zkProof, verificationFailed, failureReason } = req.body;
+    const { id, nonce, proofs, nullifier, zkProof, zkProofs, verificationFailed, failureReason } = req.body;
 
     if (!nullifier) {
       return res.status(400).json({ error: "Nullifier is required." });
@@ -211,10 +211,30 @@ app.post("/verify", async (req, res) => {
       return res.json({ access: "DENIED", reason: "BBS+ proof verification failed", nullifier });
     }
 
-    // 5.5️⃣ Verify zk-SNARK proof (if present)
-    if (zkProof && zkProof.proof && zkProof.publicSignals) {
-      console.log("🔐 zk-SNARK proof received. Verifying...");
-      const { verifyAgeProof } = require("./zkVerifier");
+    // 5.5️⃣ Verify zk-SNARK proofs
+    const { verifyAgeProof, verifyAllZkProofs } = require("./zkVerifier");
+
+    // New flow: verify all zkProofs from the map
+    if (zkProofs && typeof zkProofs === "object" && Object.keys(zkProofs).length > 0) {
+      console.log(`🔐 Verifying ${Object.keys(zkProofs).length} zk-SNARK proof(s)...`);
+      const zkResult = await verifyAllZkProofs(zkProofs);
+
+      if (!zkResult.valid) {
+        const zkReason = zkResult.reason || "zk-SNARK proof invalid";
+        console.log("❌ zk-SNARK proof verification failed:", zkReason);
+        request.failedUsers = request.failedUsers || [];
+        request.failedUsers.push({
+          subjectId: nullifier,
+          timestamp: new Date().toISOString(),
+          reason: zkReason
+        });
+        return res.json({ access: "DENIED", reason: zkReason, nullifier });
+      }
+      console.log("✅ All zk-SNARK proofs verified successfully!");
+    }
+    // Legacy flow: single zkProof for age check
+    else if (zkProof && zkProof.proof && zkProof.publicSignals) {
+      console.log("🔐 zk-SNARK proof received (legacy). Verifying...");
       const zkResult = await verifyAgeProof(zkProof.proof, zkProof.publicSignals);
 
       if (!zkResult.valid) {
@@ -236,9 +256,18 @@ app.post("/verify", async (req, res) => {
     const verifyTimeMs = Date.now() - verifyStart;
     lastVerifyTiming = { verifyTimeMs, timestamp: new Date().toISOString() };
 
+    // Extract revealed attributes from proofs
+    const revealedAttributes = {};
+    proofs.forEach(proofObj => {
+      if (proofObj.revealedValues && Object.keys(proofObj.revealedValues).length > 0) {
+        Object.assign(revealedAttributes, proofObj.revealedValues);
+      }
+    });
+
     request.verifiedUsers.push({
       subjectId: proofs[0]?.subjectId || nullifier,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      revealedAttributes
     });
 
     return res.json({ access: "GRANTED", verifyTimeMs });
