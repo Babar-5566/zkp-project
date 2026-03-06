@@ -7,7 +7,8 @@ import {
 import { useWallet } from '../context/WalletContext';
 import { getFieldsByIdType } from "../utils/schema";
 import { predicateInfo } from "../utils/schema";
-import { generateBbsProof, generateZkSnarkProof } from "../utils/bbsProof";
+import { generateBbsProof } from "../utils/bbsProver";
+import { generateZkSnarkProof } from "../utils/grothProver";
 import { useTelemetry } from '../context/TelemetryContext';
 import { getAllSchemaFields } from "../utils/schema";
 import { QRCodeCanvas } from "qrcode.react";
@@ -313,7 +314,7 @@ const Verifier = () => {
         return
       }
 
-      addLog("Proof generated successfully ✅", "success")
+      addLog("BBS+ Proof generated successfully ✅", "success")
 
       setProofData(proof)
       setStatus("success")

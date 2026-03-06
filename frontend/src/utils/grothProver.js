@@ -8,7 +8,7 @@ import * as snarkjs from "snarkjs";
  * @param {number} threshold - Minimum age required (e.g. 18)
  * @returns {Promise<{proof: Object, publicSignals: Array}>}
  */
-export async function generateZkProofInBrowser(dob, threshold) {
+export async function generateZkSnarkProof(dob, threshold) {
     // 1️⃣ Calculate age from DOB
     const parts = dob.split("/");
 
