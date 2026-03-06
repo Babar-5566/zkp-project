@@ -262,6 +262,12 @@ const Verifier = () => {
         }
       }
 
+      // If zk-SNARK was required but failed, abort
+      if (rangePredicates.length > 0 && !zkProof) {
+        setStatus("error")
+        return
+      }
+
       // 🔐 Generate nullifier
       const holderSecret = localStorage.getItem("holderSecret")
 
@@ -308,14 +314,14 @@ const Verifier = () => {
 
       const result = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || result.access !== "GRANTED") {
         addLog("Verifier rejected proof ❌", "error");
 
         setMessageBox({
           isOpen: true,
           type: "error",
           title: "Verification Failed",
-          message: result.error || "Unknown verifier error occurred.",
+          message: result.error || result.reason || "Proof verification failed.",
           onConfirm: () =>
             setMessageBox(prev => ({ ...prev, isOpen: false }))
         });
@@ -323,7 +329,7 @@ const Verifier = () => {
         return; // stop here
       }
 
-      addLog("Proof sent to verifier 📡", "success");
+      addLog("Proof verified by verifier ✅", "success");
       addLog(`Show to verifier: ${nullifier.substring(0, 5)}...${nullifier.substring(nullifier.length - 5)}`, "success");
 
     } catch (err) {
@@ -445,6 +451,13 @@ const Verifier = () => {
         } else {
           addLog("No DOB found in credential, skipping zk-SNARK", "warn")
         }
+      }
+
+      // If zk-SNARK was required but failed, abort
+      if (rangePredsLocal.length > 0 && !zkProofResult) {
+        addLog("Proof generation failed — zk-SNARK required but could not be generated ❌", "error")
+        setStatus("error")
+        return
       }
 
       await new Promise(r => setTimeout(r, 800))

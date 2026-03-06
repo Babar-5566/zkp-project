@@ -1,0 +1,24 @@
+=== Testing Valid Proof (age: 25, threshold: 18) ===
+Proof successfully generated!
+Public Signals: [ '1', '18' ]
+Verification Result: SUCCESS
+
+=== Testing Invalid Proof (age: 16, threshold: 18) ===
+ERROR:  4 Error in template AgeCheck_3 line: 15
+
+Proof generation failed: Error: Error: Assert Failed. Error in template AgeCheck_3 line: 15
+
+    at C:\PROJECT@2\zkp-project\backend\wallet\node_modules\circom_runtime\build\main.cjs:529:27
+    at Array.forEach (<anonymous>)
+    at WitnessCalculatorCircom2._doCalculateWitness (C:\PROJECT@2\zkp-project\backend\wallet\node_modules\circom_runtime\build\main.cjs:500:14)
+    at WitnessCalculatorCircom2.calculateWTNSBin (C:\PROJECT@2\zkp-project\backend\wallet\node_modules\circom_runtime\build\main.cjs:559:20)
+    at wtnsCalculate (C:\PROJECT@2\zkp-project\backend\wallet\node_modules\snarkjs\build\main.cjs:1315:28)
+    at async Object.groth16FullProve [as fullProve] (C:\PROJECT@2\zkp-project\backend\wallet\node_modules\snarkjs\build\main.cjs:1348:5)
+    at async generateAgeProof (C:\PROJECT@2\zkp-project\backend\wallet\prover.js:22:42)
+    at async runTests (C:\PROJECT@2\zkp-project\backend\zk-factory\test_age_check.js:19:42)
+Error during proof generation (Expected because constraint gte.out === 1 fails)!
+Error message: Error: Assert Failed. Error in template AgeCheck_3 line: 15
+
+
+Tests finished.
+^C
