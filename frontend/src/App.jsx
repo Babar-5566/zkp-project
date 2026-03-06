@@ -1,5 +1,7 @@
 import React from 'react';
 import { WalletProvider, useWallet } from './context/WalletContext';
+import { TelemetryProvider } from './context/TelemetryContext';
+import BenchmarkModal from './components/BenchmarkModal';
 import Issuer from './pages/Issuer';
 import Wallet from './pages/Wallet';
 import Verifier from './pages/Verifier';
@@ -9,9 +11,8 @@ import Welcome from './pages/Welcome';
 const TabButton = ({ isActive, onClick, label }) => (
   <button
     onClick={onClick}
-    className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[3px] transition-all relative ${
-      isActive ? 'text-white' : 'text-slate-600 hover:text-slate-400'
-    }`}
+    className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[3px] transition-all relative ${isActive ? 'text-white' : 'text-slate-600 hover:text-slate-400'
+      }`}
   >
     {label}
     {isActive && (
@@ -22,7 +23,7 @@ const TabButton = ({ isActive, onClick, label }) => (
 
 // Main Content Logic
 const AppContent = () => {
-  const { activeTab, setActiveTab } = useWallet(); // Using Context Logic
+  const { activeTab, setActiveTab } = useWallet();
   const [hasEntered, setHasEntered] = React.useState(false);
 
   if (!hasEntered) {
@@ -31,7 +32,7 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-cyan-500/30 font-sans">
-      
+
       {/* Navbar */}
       <nav className="fixed top-0 w-full bg-[#020617]/90 backdrop-blur-md border-b border-white/5 z-50">
         <div className="max-w-xl mx-auto flex w-full">
@@ -48,6 +49,9 @@ const AppContent = () => {
         {activeTab === 'verifier' && <Verifier />}
       </main>
 
+      {/* Global Telemetry Button + Modal (visible on all pages) */}
+      <BenchmarkModal />
+
       {/* Footer Status */}
       <footer className="fixed bottom-4 left-0 w-full text-center pointer-events-none">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/50 backdrop-blur rounded-full border border-white/5">
@@ -62,7 +66,9 @@ const AppContent = () => {
 const App = () => {
   return (
     <WalletProvider>
-      <AppContent />
+      <TelemetryProvider>
+        <AppContent />
+      </TelemetryProvider>
     </WalletProvider>
   );
 };

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import BenchmarkModal from '../components/BenchmarkModal'; 
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck, ChevronDown, User, Cpu,
@@ -31,29 +30,6 @@ const Issuer = () => {
   const [shake, setShake] = useState(false);
   const [verifyingField, setVerifyingField] = useState(null);
   const [verifiedFields, setVerifiedFields] = useState({});
-
-  // 📍 Benchmark Modal States & Functions (Added here)
-  const [isBenchOpen, setIsBenchOpen] = useState(false);
-  const [isBenchTesting, setIsBenchTesting] = useState(false);
-  const [benchMetrics, setBenchMetrics] = useState(null);
-
-  const runIssuerBenchmark = () => {
-    setIsBenchTesting(true);
-    setBenchMetrics(null);
-    
-    setTimeout(() => {
-      setBenchMetrics({
-        proverTime: '450', // Signing time limit
-        verifierTime: '12', 
-        proofSize: '1.2', // Payload size in KB
-        latency: '85',
-        cpuUsage: '12',
-        ramUsage: '64',
-        network: 'Optimal (12ms RTT)'
-      });
-      setIsBenchTesting(false);
-    }, 1800);
-  };
 
   // --- HANDLERS ---
   const handleInputChange = (e) => {
@@ -451,17 +427,7 @@ const Issuer = () => {
         </motion.button>
       </form>
 
-      {/* 📍 Benchmark Modal Integrated Here (Left Side) */}
-      <BenchmarkModal 
-        isOpen={isBenchOpen}
-        onClose={() => setIsBenchOpen(false)}
-        isTesting={isBenchTesting}
-        metrics={benchMetrics}
-        startEvaluation={() => {
-          setIsBenchOpen(true);
-          runIssuerBenchmark();
-        }}
-      />
+
 
     </div>
   );

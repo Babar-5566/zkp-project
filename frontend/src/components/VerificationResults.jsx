@@ -2,10 +2,12 @@ import React, { useEffect, useState } from "react";
 
 const VerificationResults = ({ requestId, onExpired }) => {
   const [results, setResults] = useState([]);
+  const [failedResults, setFailedResults] = useState([]);
   const [status, setStatus] = useState("waiting");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortedResults, setSortedResults] = useState([]);
+  const [sortedFailed, setSortedFailed] = useState([]);
 
   // 🔄 Polling
   useEffect(() => {
@@ -20,14 +22,20 @@ const VerificationResults = ({ requestId, onExpired }) => {
         );
         const data = await res.json();
 
+        // ✅ Verified users — newest first
         const users = data.verifiedUsers || [];
-
-        // ✅ Always keep newest on top
         const sorted = [...users].sort(
           (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
         );
-
         setResults(sorted);
+
+        // ❌ Failed users — newest first
+        const failed = data.failedUsers || [];
+        const sortedF = [...failed].sort(
+          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+        );
+        setFailedResults(sortedF);
+
         setStatus(data.status);
 
         if (data.status === "expired") {
@@ -45,25 +53,27 @@ const VerificationResults = ({ requestId, onExpired }) => {
     return () => clearInterval(interval);
   }, [requestId, onExpired]);
 
-  // ✅ SEARCH LOGIC INSIDE useEffect
+  // ✅ SEARCH LOGIC
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSortedResults(results);
+      setSortedFailed(failedResults);
       return;
     }
 
     const q = searchQuery.toLowerCase();
 
-    const matched = results.filter((user) =>
+    const matchedVerified = results.filter((user) =>
       user.subjectId.toLowerCase().includes(q)
     );
+    setSortedResults([...matchedVerified, ...results]);
 
-    // 🔥 Final list:
-    // 1. matched users at top
-    // 2. original list below unchanged
-    setSortedResults([...matched, ...results]);
+    const matchedFailed = failedResults.filter((user) =>
+      user.subjectId.toLowerCase().includes(q)
+    );
+    setSortedFailed([...matchedFailed, ...failedResults]);
 
-  }, [searchQuery, results]);
+  }, [searchQuery, results, failedResults]);
 
   if (!requestId) {
     return (
@@ -78,15 +88,25 @@ const VerificationResults = ({ requestId, onExpired }) => {
     );
   }
 
+  const truncateId = (id) =>
+    `${id.substring(0, 5)}...${id.substring(id.length - 5)}`;
+
   return (
     <div className="mt-8 bg-[#0B101B] border border-slate-800 rounded-2xl p-6">
-      
-      {/* ✅ COUNT SHOULD BE TOTAL, NOT FILTERED */}
-      <h3 className="text-white font-bold mb-4">
-        Verified Users ({results.length})
-      </h3>
 
-      {/* 🔍 SEARCH INPUT (AUTO RUN) */}
+      {/* ✅ COUNTS */}
+      <div className="flex items-center gap-3 mb-4">
+        <h3 className="text-white font-bold">
+          Verified ({results.length})
+        </h3>
+        {failedResults.length > 0 && (
+          <span className="text-red-400 font-bold text-sm">
+            · Failed ({failedResults.length})
+          </span>
+        )}
+      </div>
+
+      {/* 🔍 SEARCH INPUT */}
       <div className="mb-4">
         <input
           type="text"
@@ -97,34 +117,83 @@ const VerificationResults = ({ requestId, onExpired }) => {
         />
       </div>
 
-      {status === "waiting" && results.length === 0 && (
+      {status === "waiting" && results.length === 0 && failedResults.length === 0 && (
         <p className="text-slate-400 text-sm mb-4">
           Waiting for users to verify...
         </p>
       )}
 
+      {/* ✅ VERIFIED USERS */}
       {sortedResults.map((user, index) => {
-
         const isMatched =
           searchQuery &&
           user.subjectId.toLowerCase().includes(searchQuery.toLowerCase());
 
         return (
           <div
-            key={index}
-            className={`p-3 rounded-xl mb-2 border ${
-              isMatched
-                ? "bg-orange-900/40 border-orange-500"   // 🔥 Highlighted
-                : "bg-slate-900 border-slate-700"        // Normal
-            }`}
+            key={`verified-${index}`}
+            className={`p-3 rounded-xl mb-2 border ${isMatched
+                ? "bg-orange-900/40 border-orange-500"
+                : "bg-slate-900 border-slate-700"
+              }`}
           >
-            <p className="text-emerald-400 font-mono text-xs">
-              {`${user.subjectId.substring(0, 5)}...${user.subjectId.substring(
-                user.subjectId.length - 5
-              )}`}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-emerald-400 font-mono text-xs">
+                {truncateId(user.subjectId)}
+              </p>
+              <span className="text-[8px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">
+                Verified
+              </span>
+            </div>
             <p className="text-slate-400 text-[10px]">
               Verified at: {new Date(user.timestamp).toLocaleTimeString()}
+            </p>
+
+            {/* Revealed Attributes */}
+            {user.revealedAttributes && Object.keys(user.revealedAttributes).length > 0 && (
+              <div className="mt-2 pt-2 border-t border-slate-800">
+                <p className="text-[8px] font-black text-cyan-400 uppercase tracking-widest mb-1">
+                  Revealed Attributes
+                </p>
+                {Object.entries(user.revealedAttributes).map(([key, value]) => (
+                  <div key={key} className="flex justify-between text-[10px]">
+                    <span className="text-slate-400">{key}</span>
+                    <span className="text-white font-semibold">{value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* ❌ FAILED USERS */}
+      {sortedFailed.map((user, index) => {
+        const isMatched =
+          searchQuery &&
+          user.subjectId.toLowerCase().includes(searchQuery.toLowerCase());
+
+        return (
+          <div
+            key={`failed-${index}`}
+            className={`p-3 rounded-xl mb-2 border ${isMatched
+                ? "bg-orange-900/40 border-orange-500"
+                : "bg-red-950/40 border-red-500/30"
+              }`}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-red-400 font-mono text-xs">
+                {truncateId(user.subjectId)}
+              </p>
+              <span className="text-[8px] font-black uppercase tracking-widest bg-red-500/20 text-red-400 px-2 py-0.5 rounded">
+                Failed
+              </span>
+            </div>
+            <p className="text-slate-400 text-[10px]">
+              Failed at: {new Date(user.timestamp).toLocaleTimeString()}
+            </p>
+            <p className="text-red-300/70 text-[9px] mt-1 italic">
+              Reason: {user.reason}
             </p>
           </div>
         );

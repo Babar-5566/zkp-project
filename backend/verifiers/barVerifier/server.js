@@ -79,7 +79,8 @@ app.post("/create-proof-request", (req, res) => {
     requests[proofRequest.id] = {
       ...proofRequest,
       status: "pending",
-      verifiedUsers: []
+      verifiedUsers: [],
+      failedUsers: []
     };
 
     res.json(proofRequest);
@@ -111,11 +112,32 @@ app.get("/request", (req, res) => {
   res.json(requests[id]);
 });
 
+// === Server Metrics for Telemetry ===
+let lastVerifyTiming = null;
+
+app.get("/metrics", (req, res) => {
+  const mem = process.memoryUsage();
+  const startCpu = process.cpuUsage();
+  const startTime = Date.now();
+  setTimeout(() => {
+    const endCpu = process.cpuUsage(startCpu);
+    const elapsed = (Date.now() - startTime) * 1000;
+    const cpuPercent = ((endCpu.user + endCpu.system) / elapsed * 100).toFixed(1);
+    res.json({
+      cpuPercent,
+      memoryMB: (mem.rss / 1024 / 1024).toFixed(1),
+      uptime: process.uptime(),
+      lastVerifyTiming
+    });
+  }, 100);
+});
+
 app.post("/verify", async (req, res) => {
+  const verifyStart = Date.now();
   try {
     console.log(req.body.messages);
-    
-    const { id, nonce, proofs, nullifier } = req.body;
+
+    const { id, nonce, proofs, nullifier, zkProof, zkProofs, verificationFailed, failureReason, revocationIndex } = req.body;
 
     if (!nullifier) {
       return res.status(400).json({ error: "Nullifier is required." });
@@ -153,13 +175,25 @@ app.post("/verify", async (req, res) => {
       return res.status(400).json({ error: "Invalid nonce" });
     }
 
+    // 🛑 Handle pre-failed submissions (holder already knows it failed)
+    if (verificationFailed) {
+      console.log("❌ Pre-failed verification received:", failureReason);
+      request.failedUsers = request.failedUsers || [];
+      request.failedUsers.push({
+        subjectId: nullifier,
+        timestamp: new Date().toISOString(),
+        reason: failureReason || "Unknown failure"
+      });
+      return res.json({ access: "DENIED", reason: failureReason || "Unknown failure", nullifier });
+    }
+
     // 4️⃣ Validate proofs exist
     if (!proofs || !Array.isArray(proofs) || proofs.length === 0) {
       console.log("No proofs provided");
       return res.status(400).json({ error: "No proofs provided" });
     }
 
-    // 5️⃣ Cryptographically verify proofs
+    // 5️⃣ Cryptographically verify BBS+ proofs
     const result = await verifyProof({
       proofs,
       nonce,
@@ -167,18 +201,103 @@ app.post("/verify", async (req, res) => {
     });
 
     if (!result.verified) {
-      return res.json({ access: "DENIED" });
+      console.log("❌ BBS+ proof verification failed!");
+      request.failedUsers = request.failedUsers || [];
+      request.failedUsers.push({
+        subjectId: nullifier,
+        timestamp: new Date().toISOString(),
+        reason: "BBS+ proof verification failed"
+      });
+      return res.json({ access: "DENIED", reason: "BBS+ proof verification failed", nullifier });
+    }
+
+    // 5.5️⃣ Verify zk-SNARK proofs
+    const { verifyAgeProof, verifyAllZkProofs } = require("./zkVerifier");
+
+    // New flow: verify all zkProofs from the map
+    if (zkProofs && typeof zkProofs === "object" && Object.keys(zkProofs).length > 0) {
+      console.log(`🔐 Verifying ${Object.keys(zkProofs).length} zk-SNARK proof(s)...`);
+      const zkResult = await verifyAllZkProofs(zkProofs);
+
+      if (!zkResult.valid) {
+        const zkReason = zkResult.reason || "zk-SNARK proof invalid";
+        console.log("❌ zk-SNARK proof verification failed:", zkReason);
+        request.failedUsers = request.failedUsers || [];
+        request.failedUsers.push({
+          subjectId: nullifier,
+          timestamp: new Date().toISOString(),
+          reason: zkReason
+        });
+        return res.json({ access: "DENIED", reason: zkReason, nullifier });
+      }
+      console.log("✅ All zk-SNARK proofs verified successfully!");
+    }
+    // Legacy flow: single zkProof for age check
+    else if (zkProof && zkProof.proof && zkProof.publicSignals) {
+      console.log("🔐 zk-SNARK proof received (legacy). Verifying...");
+      const zkResult = await verifyAgeProof(zkProof.proof, zkProof.publicSignals);
+
+      if (!zkResult.valid) {
+        const zkReason = zkResult.reason || "zk-SNARK proof invalid";
+        console.log("❌ zk-SNARK proof verification failed:", zkReason);
+        request.failedUsers = request.failedUsers || [];
+        request.failedUsers.push({
+          subjectId: nullifier,
+          timestamp: new Date().toISOString(),
+          reason: zkReason
+        });
+        return res.json({ access: "DENIED", reason: zkReason, nullifier });
+      }
+      console.log("✅ zk-SNARK proof verified successfully!");
+    }
+
+    // 5.6️⃣ Revocation check — query the issuer's accumulator
+    if (revocationIndex != null) {
+      try {
+        console.log(`🔍 Checking revocation status for index ${revocationIndex}...`);
+        const revRes = await fetch("http://localhost:5000/api/revocation/state");
+        const revData = await revRes.json();
+
+        if (revData.revokedIndices && revData.revokedIndices.includes(revocationIndex)) {
+          console.log("❌ Credential revoked at index", revocationIndex);
+          request.failedUsers = request.failedUsers || [];
+          request.failedUsers.push({
+            subjectId: nullifier,
+            timestamp: new Date().toISOString(),
+            reason: "Credential has been revoked"
+          });
+          return res.json({ access: "DENIED", reason: "Credential has been revoked", nullifier });
+        }
+        console.log("✅ Credential is not revoked.");
+      } catch (revErr) {
+        console.error("⚠️ Could not reach issuer for revocation check:", revErr.message);
+        // Fail open or fail closed — here we fail closed for safety
+        return res.json({ access: "DENIED", reason: "Unable to verify revocation status", nullifier });
+      }
+    } else {
+      console.log("ℹ️ No revocationIndex provided — skipping revocation check (backward compatible).");
     }
 
     // 6️⃣ Mark request as verified
     request.status = "verified";
+    const verifyTimeMs = Date.now() - verifyStart;
+    lastVerifyTiming = { verifyTimeMs, timestamp: new Date().toISOString() };
+
+    // Extract revealed attributes from proofs
+    const revealedAttributes = {};
+    proofs.forEach(proofObj => {
+      if (proofObj.revealedValues && Object.keys(proofObj.revealedValues).length > 0) {
+        Object.assign(revealedAttributes, proofObj.revealedValues);
+      }
+    });
 
     request.verifiedUsers.push({
       subjectId: proofs[0]?.subjectId || nullifier,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      revealedAttributes
     });
 
-    return res.json({ access: "GRANTED" });
+    return res.json({ access: "GRANTED", verifyTimeMs });
 
   } catch (err) {
     console.error("Verification failed:", err);
@@ -196,7 +315,8 @@ app.get("/request-status", (req, res) => {
   }
   res.json({
     status: request.status || "pending",
-    verifiedUsers: request.verifiedUsers || []
+    verifiedUsers: request.verifiedUsers || [],
+    failedUsers: request.failedUsers || []
   });
 });
 

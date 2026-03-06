@@ -14,5 +14,15 @@ export default defineConfig({
       process: "process/browser",
       buffer: "buffer"
     }
+  },
+
+  optimizeDeps: {
+    exclude: [
+      "snarkjs",        // prevent pre-bundling from breaking WASM loading
+      "fastfile",
+      "@iden3/binfileutils",
+      "ffjavascript",
+      "circom_runtime"
+    ]
   }
 })

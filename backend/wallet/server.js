@@ -55,21 +55,11 @@ app.post("/wallet/storeAadhaar", (req, res) => {
     }
 });
 
-/**
- * Generate predicate proof (age >= 18)
- */
-app.get("/wallet/proveAge", async (req, res) => {
-    try {
-        const proof = await generateProof();
-        res.json(proof);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-});
+
 
 /* ================= SERVER START ================= */
 
-const PORT = 5000;
+const PORT = 5001;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });

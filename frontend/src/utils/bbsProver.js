@@ -37,9 +37,9 @@ export async function generateBbsProof({ mapping, request, context = "Default" }
       if (!vc || !vc.proof || !vc.proof.signature) {
         throw new Error(`Invalid VC for ${attribute}`)
       }
-      
+
       console.log(vc);
-      
+
       const messageBytes = vc.proof.signature.messages.map(attr =>
         new TextEncoder().encode(attr)
       )
@@ -54,15 +54,44 @@ export async function generateBbsProof({ mapping, request, context = "Default" }
         p => p.name === attribute
       )
 
-      const revealIndices = []
+      // Also check requested_attributes for 'reveal' type
+      const revealAttrs = (request.requested_attributes || []).filter(
+        a => a.name === attribute
+      )
 
+      const revealIndices = []
+      const revealedValues = {}
+
+      // Handle predicates
       predicates.forEach(p => {
-        if (p.predicate === "existence" || p.predicate === "reveal") {
+        if (p.predicate === "reveal") {
+          // REVEAL: add index to revealed set + capture value
           const idx = vc.proof.signature.messages.findIndex(m =>
             m.startsWith(`${attribute}:`)
           )
+          if (idx !== -1) {
+            revealIndices.push(idx)
+            // Extract the value part after "attribute:"
+            const msg = vc.proof.signature.messages[idx]
+            revealedValues[attribute] = msg.split(':').slice(1).join(':')
+          }
+        }
+        // EXISTENCE: do NOT add to revealIndices
+        // BBS+ proof inherently proves all signed messages exist
+        // without needing to reveal them
+      })
 
-          if (idx !== -1) revealIndices.push(idx)
+      // Handle requested_attributes (also treated as reveal)
+      revealAttrs.forEach(a => {
+        if (a.predicate === "reveal") {
+          const idx = vc.proof.signature.messages.findIndex(m =>
+            m.startsWith(`${attribute}:`)
+          )
+          if (idx !== -1 && !revealIndices.includes(idx)) {
+            revealIndices.push(idx)
+            const msg = vc.proof.signature.messages[idx]
+            revealedValues[attribute] = msg.split(':').slice(1).join(':')
+          }
         }
       })
 
@@ -83,7 +112,7 @@ export async function generateBbsProof({ mapping, request, context = "Default" }
         attribute,
         proof: btoa(String.fromCharCode(...proof)),
         revealIndices,
-        // messages: vc.proof.signature.messages
+        revealedValues,
       })
     }
 
@@ -91,6 +120,26 @@ export async function generateBbsProof({ mapping, request, context = "Default" }
 
   } catch (err) {
     console.error("BBS+ proof generation failed:", err)
+    throw err
+  }
+}
+
+/**
+ * Generate a zk-SNARK proof for numeric/range predicates (e.g., age >= 18)
+ * Runs entirely in the browser using snarkjs — private input never leaves the device.
+ * @param {string} dob - Date of birth in DD/MM/YYYY format
+ * @param {number} threshold - Minimum age required
+ * @returns {Promise<{proof: Object, publicSignals: Array}>}
+ */
+export async function generateZkSnarkProof(dob, threshold) {
+  // Import the in-browser ZK prover (uses snarkjs + wasm/zkey from /zk/)
+  const { generateZkProofInBrowser } = await import("./grothProver.js")
+
+  try {
+    const { proof, publicSignals } = await generateZkProofInBrowser(dob, threshold)
+    return { proof, publicSignals }
+  } catch (err) {
+    console.error("zk-SNARK proof generation failed (in-browser):", err)
     throw err
   }
 }
