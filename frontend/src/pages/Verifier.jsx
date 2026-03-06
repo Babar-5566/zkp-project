@@ -650,7 +650,7 @@ const Verifier = () => {
         latency: Math.round(endToEndMs) + 'ms',
         cpuUsage: serverCpu.toFixed(1),
         ramUsage: serverRam.toFixed(1),
-        proofGeneratedBy: vc?.credentialSubject?.fullName || 'Unknown',
+        proofGeneratedBy: vc?.type?.find(t => t !== 'VerifiableCredential')?.replace('Credential', '')?.replace(/([A-Z])/g, ' $1')?.trim() || 'Unknown Card',
         proofType: Object.keys(zkProofsLocal).length > 0 ? `BBS+ + zk-SNARK (Groth16 × ${Object.keys(zkProofsLocal).length})` : 'BBS+ Only'
       })
 

@@ -60,14 +60,19 @@ const AnimatedCounter = ({ value, suffix = "" }) => {
       ease: premiumEase,
       onUpdate(val) {
         if (nodeRef.current) {
-          nodeRef.current.textContent = (numericValue % 1 !== 0 ? val.toFixed(1) : Math.floor(val)) + suffix;
+          nodeRef.current.textContent = numericValue % 1 !== 0 ? val.toFixed(1) : Math.floor(val);
         }
       },
     });
     return () => controls.stop();
-  }, [value, suffix]);
+  }, [value]);
 
-  return <span ref={nodeRef} className="tabular-nums">0{suffix}</span>;
+  return (
+    <div className="flex items-baseline gap-1">
+      <span ref={nodeRef} className="tabular-nums">0</span>
+      {suffix && <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">{suffix}</span>}
+    </div>
+  );
 };
 
 // ==========================================
@@ -288,30 +293,72 @@ const BenchmarkModal = () => {
 const MetricCard = ({ icon, title, value }) => {
   const numMatch = value?.toString().match(/[\d.]+/);
   const textMatch = value?.toString().replace(/[\d.]+/g, '');
-  const numericVal = numMatch ? numMatch[0] : "0";
+  const numericVal = numMatch ? parseFloat(numMatch[0]) : 0;
   const suffix = textMatch ? textMatch : "";
+
+  // 🎨 Smart Color Coding Logic
+  let statusColor = "cyan"; // default
+  let valueColor = "text-white";
+  let iconColor = "text-cyan-400";
+  let hoverBorderColor = "rgba(6,182,212,0.4)"; // cyan border
+
+  if (title.includes("Time") || title.includes("End-to-End")) {
+    if (numericVal < 200) {
+      statusColor = "emerald";
+      valueColor = "text-emerald-50";
+      iconColor = "text-emerald-400";
+      hoverBorderColor = "rgba(52,211,153,0.4)";
+    } else if (numericVal < 600) {
+      statusColor = "amber";
+      valueColor = "text-amber-50";
+      iconColor = "text-amber-400";
+      hoverBorderColor = "rgba(251,191,36,0.4)";
+    } else {
+      statusColor = "rose";
+      valueColor = "text-rose-50";
+      iconColor = "text-rose-400";
+      hoverBorderColor = "rgba(244,63,94,0.4)";
+    }
+  } else if (title.includes("Size")) {
+    if (numericVal < 2) {
+      statusColor = "emerald";
+      valueColor = "text-emerald-50";
+      iconColor = "text-emerald-400";
+      hoverBorderColor = "rgba(52,211,153,0.4)";
+    } else {
+      statusColor = "amber";
+      valueColor = "text-amber-50";
+      iconColor = "text-amber-400";
+      hoverBorderColor = "rgba(251,191,36,0.4)";
+    }
+  }
 
   return (
     <motion.div
       variants={itemVariants}
-      whileHover={{ y: -4, scale: 1.01, backgroundColor: "rgba(255,255,255,0.04)", borderColor: "rgba(6,182,212,0.4)" }}
+      whileHover={{ y: -4, scale: 1.01, backgroundColor: "rgba(255,255,255,0.04)", borderColor: hoverBorderColor }}
       className="bg-white/[0.02] border border-white/5 p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl transition-all duration-300 relative overflow-hidden group cursor-default"
     >
+      {/* Background Icon Watermark */}
       <motion.div
         animate={{ opacity: [0.02, 0.05, 0.02], scale: [1, 1.1, 1] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -right-4 -top-4 text-white transform scale-[2] rotate-12"
+        className={`absolute -right-4 -top-4 ${iconColor} opacity-20 transform scale-[2] rotate-12 transition-colors`}
       >
         {React.cloneElement(icon, { size: 60 })}
       </motion.div>
 
+      {/* Shine Effect */}
       <motion.div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
 
+      {/* Header */}
       <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3 md:mb-4 relative z-10">
-        <div className="text-cyan-400">{React.cloneElement(icon, { size: 12 })}</div>
+        <div className={iconColor}>{React.cloneElement(icon, { size: 12 })}</div>
         <h4 className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest"><ScrambleText text={title} /></h4>
       </div>
-      <div className="flex items-baseline gap-1 text-xl sm:text-2xl md:text-3xl font-bold text-white font-mono relative z-10 drop-shadow-md">
+
+      {/* Value */}
+      <div className={`flex items-baseline gap-1 text-xl sm:text-2xl md:text-3xl font-bold ${valueColor} font-mono relative z-10 drop-shadow-md transition-colors`}>
         <AnimatedCounter value={numericVal} suffix={suffix} />
       </div>
     </motion.div>
