@@ -95,6 +95,278 @@ marks	existence, reveal, numeric/range
 university	existence, reveal
 passingYear	existence, reveal, numeric/range
 ```
+
+# Predicate Behavior Details
+
+This document describes how different predicates are handled across **BBS+ proofs** and **Groth16 circuits**.
+
+---
+
+# 1. `existence` — BBS+ (Fix)
+
+## Behavior
+- Do **NOT** add the attribute index to `revealIndices` in `bbsProver.js`.
+- A **BBS+ proof already proves that all signed messages exist** without revealing them.
+
+## Current Issue
+The current implementation **incorrectly reveals the attribute value**.
+
+## Fix
+Skip adding the attribute index for the `existence` predicate.
+
+```js
+// Incorrect
+revealIndices.push(attributeIndex);
+
+// Correct
+// Do nothing for existence predicate
+```
+
+## Result
+- Attribute existence is proven.
+- Attribute value remains hidden.
+
+---
+
+# 2. `reveal` — BBS+ (New)
+
+## Behavior
+- Add the attribute index to `revealIndices`.
+- Return the revealed message values inside the proof response.
+
+## Backend Handling
+The backend stores revealed attributes inside:
+
+```
+verifiedUsers
+```
+
+records.
+
+## Frontend Handling
+`VerificationResults.jsx` displays the revealed attributes.
+
+## Schema Requirement
+Add `reveal` to every field's predicate list in:
+
+```
+schema.js
+```
+
+Example:
+
+```js
+predicates: ["existence", "reveal"]
+```
+
+## Result
+- Attribute value is revealed to the verifier.
+- Value is verified against the issuer signature.
+
+---
+
+# 3. `equality` — Groth16 (New Circuit)
+
+## Supported Fields
+
+Categorical fields:
+
+- `gender`
+- `board`
+- `nationality`
+- `photoVerified` (boolean folded in)
+
+## Encoding Strategy
+
+Strings are converted to integers.
+
+Example:
+
+| Value | Encoded |
+|------|------|
+| Male | 1 |
+| Female | 2 |
+| CBSE | 1 |
+| ICSE | 2 |
+
+Boolean encoding:
+
+| Value | Encoded |
+|------|------|
+| Yes | 1 |
+| No | 0 |
+
+## Circuit Logic
+
+Constraint enforced:
+
+```
+value == expected
+```
+
+Circuit output:
+
+```
+isEqual = 1
+```
+
+## Result
+- Verifier confirms equality.
+- Actual value remains hidden.
+
+---
+
+# 4. `numeric / range` — Groth16 (Extend)
+
+## 4.1 `dob → age`
+
+Already implemented.
+
+Constraint:
+
+```
+age ≥ threshold
+```
+
+---
+
+## 4.2 `marks`
+
+New circuit:
+
+```
+range_check.circom
+```
+
+Constraint:
+
+```
+marks ≥ threshold
+```
+
+Implementation:
+
+- 8-bit comparator
+- Range: **0 – 100**
+
+---
+
+## 4.3 `passingYear`
+
+New circuit:
+
+```
+year_check.circom
+```
+
+Constraint:
+
+```
+passingYear ≤ threshold
+```
+
+Implementation:
+
+```
+LessEqThan(16)
+```
+
+---
+
+# 5. `date comparison` — Groth16 (New Circuit)
+
+## Step 1: Convert Date → Integer
+
+Convert dates into **epoch-days**.
+
+```js
+Math.floor(new Date(date).getTime() / 86400000)
+```
+
+## Circuit Logic
+
+Constraint:
+
+```
+dateValue > dateThreshold
+```
+
+## Implementation
+
+- 32-bit comparator
+
+## Supported Fields
+
+- `expiryDate`
+- `issueDate`
+
+---
+
+# 6. `hash` — Groth16 (New Circuit)
+
+## Hash Function
+
+Uses **Poseidon Hash**.
+
+Why Poseidon?
+
+| Hash | Constraints |
+|-----|-----|
+| Poseidon | ~250 |
+| SHA-256 | ~28,000 |
+
+Poseidon is **much cheaper for ZK circuits**.
+
+---
+
+## Circuit Logic
+
+```
+Poseidon(preimage) == expectedHash
+```
+
+---
+
+## Use Case
+
+Verifier computes:
+
+```
+Poseidon("Alex")
+```
+
+Holder proves:
+
+- They know a value
+- That produces the same hash
+
+Without revealing the value.
+
+---
+
+## Supported Fields
+
+- `fullName`
+- `aadhaarNumber`
+- `panID`
+- `passportID`
+- `licenseID`
+- `rollNumber`
+
+---
+
+# Summary
+
+| Predicate | System Used | Purpose |
+|---|---|---|
+| existence | BBS+ | Prove attribute exists |
+| reveal | BBS+ | Reveal attribute value |
+| equality | Groth16 | Check categorical equality |
+| numeric/range | Groth16 | Check numeric thresholds |
+| date comparison | Groth16 | Compare dates |
+| hash | Groth16 | Prove string equality privately |
+
+
 Older One (Needs Removal) :-
 ```bash
 
