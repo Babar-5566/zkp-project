@@ -97,28 +97,20 @@ export async function generateBbsProof({ mapping, request, context = "Default" }
 
 /**
  * Generate a zk-SNARK proof for numeric/range predicates (e.g., age >= 18)
- * Calls wallet backend to generate Groth16 proof server-side
+ * Runs entirely in the browser using snarkjs — private input never leaves the device.
  * @param {string} dob - Date of birth in DD/MM/YYYY format
  * @param {number} threshold - Minimum age required
  * @returns {Promise<{proof: Object, publicSignals: Array}>}
  */
 export async function generateZkSnarkProof(dob, threshold) {
+  // Import the in-browser ZK prover (uses snarkjs + wasm/zkey from /zk/)
+  const { generateZkProofInBrowser } = await import("./zkProver.js")
+
   try {
-    const response = await fetch("http://localhost:5000/wallet/zkproof", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dob, threshold: parseInt(threshold) })
-    })
-
-    if (!response.ok) {
-      const err = await response.json()
-      throw new Error(err.error || "zk-SNARK proof generation failed")
-    }
-
-    const { proof, publicSignals } = await response.json()
+    const { proof, publicSignals } = await generateZkProofInBrowser(dob, threshold)
     return { proof, publicSignals }
   } catch (err) {
-    console.error("zk-SNARK proof generation failed:", err)
+    console.error("zk-SNARK proof generation failed (in-browser):", err)
     throw err
   }
 }

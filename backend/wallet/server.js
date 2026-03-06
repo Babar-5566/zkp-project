@@ -68,7 +68,9 @@ app.get("/wallet/proveAge", async (req, res) => {
 });
 
 /**
- * Generate zk-SNARK proof (age >= threshold)
+ * [DEPRECATED] Generate zk-SNARK proof (age >= threshold)
+ * ZK proof generation has moved to the FRONTEND (in-browser via snarkjs).
+ * This endpoint is kept for backward compatibility only.
  * Body: { dob: "DD/MM/YYYY", threshold: 18 }
  */
 const { generateAgeProof } = require("./prover");
@@ -109,7 +111,7 @@ app.post("/wallet/zkproof", async (req, res) => {
 
 /* ================= SERVER START ================= */
 
-const PORT = 5000;
+const PORT = 5001;
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
