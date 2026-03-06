@@ -73,6 +73,30 @@ npm run dev
 ---
 ## Types of predicate :-
 ```bash
+fullName	existence, reveal, hash
+aadhaarNumber	existence, reveal, hash
+dob	existence, reveal, date comparison, numeric/range
+gender	existence, reveal, equality
+address	existence, reveal, hash
+photoVerified	existence, reveal, equality
+panID	existence, reveal, hash
+guardianName	existence, reveal, hash
+passportID	existence, reveal, hash
+nationality	existence, reveal, equality
+expiryDate	existence, reveal, date comparison
+licenseID	existence, reveal, hash
+issueDate	existence, reveal, date comparison
+placeOfBirth	existence, reveal
+fatherName / motherName	existence, reveal, hash
+board	existence, reveal, equality
+rollNumber	existence, reveal, hash
+school	existence, reveal
+marks	existence, reveal, numeric/range
+university	existence, reveal
+passingYear	existence, reveal, numeric/range
+```
+Older One (Needs Removal) :-
+```bash
 
   "Aadhaar": {
     "fullName": ["existence", "equality", "cross-field"],
