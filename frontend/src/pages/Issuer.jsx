@@ -23,7 +23,7 @@ const Issuer = () => {
   const [filteredCountries, setFilteredCountries] = useState(COUNTRIES);
   const [filteredBoards, setFilteredBoards] = useState(BOARDS);
   const [filteredUnis, setFilteredUnis] = useState(UNIVERSITIES);
-  const yearsList = Array.from({ length: 81 }, (_, i) => 2030 - i); // 2030 down to 1950
+  const yearsList = Array.from({ length: 101 }, (_, i) => 2050 - i); // 2050 down to 1950
 
   // Validation States
   const [errorFields, setErrorFields] = useState([]); // Array of field names with errors
@@ -46,19 +46,23 @@ const Issuer = () => {
 
     // --- Custom-date field formatting ---
     if (name === 'dob' || name === "expiryDate") {
-      // Remove non-digit characters
-      let digits = value.replace(/\D/g, '').slice(0, 8); // Max 8 digits: DDMMYYYY
+      // Extract only digits from raw input
+      const digits = value.replace(/\D/g, '').slice(0, 8); // Max 8 digits: DDMMYYYY
 
-      // Auto-insert slashes
-      if (digits.length > 2) digits = digits.slice(0, 2) + '/' + digits.slice(2);
-      if (digits.length > 5) digits = digits.slice(0, 5) + '/' + digits.slice(5, 9);
+      // Build formatted string with slashes at correct positions
+      let formatted = '';
+      for (let i = 0; i < digits.length; i++) {
+        if (i === 2 || i === 4) formatted += '/';
+        formatted += digits[i];
+      }
 
-      finalValue = digits;
+      finalValue = formatted;
 
-      // --- Save and adjust cursor position ---
-      let newPos = selectionStart;
-      // If a slash is added, move cursor forward
-      if (selectionStart === 2 || selectionStart === 5) newPos += 1;
+      // --- Cursor position based on digit count (not raw selectionStart) ---
+      const digitsBeforeCursor = value.slice(0, selectionStart).replace(/\D/g, '').length;
+      let newPos = digitsBeforeCursor;
+      if (digitsBeforeCursor > 2) newPos += 1; // account for first '/'
+      if (digitsBeforeCursor > 4) newPos += 1; // account for second '/'
 
       // Update formData first
       setFormData(prev => ({ ...prev, [name]: finalValue }));
@@ -183,11 +187,7 @@ const Issuer = () => {
     // Check numbers are valid
     if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1000 || year > 9999) return false;
 
-    // Extra check for dob: year cannot be in the future
-    if (name === 'dob') {
-      const currentYear = new Date().getFullYear();
-      if (year > currentYear) return false;
-    }
+    // Future years are now allowed for all date fields including dob
     console.log("check");
     // Check if JS Date can represent it correctly
     const date = new Date(year, month - 1, day);
@@ -296,45 +296,121 @@ const Issuer = () => {
                         <Calendar size={16} className="text-black" />
                       </button>
 
+                      {/* FULL-SCREEN CALENDAR MODAL (Compact Size) */}
                       <AnimatePresence>
                         {activePicker === field.name && (
-                          <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="absolute top-full right-0 mt-2 w-64 bg-[#0F1623] border border-slate-700 rounded-2xl shadow-2xl p-4 z-[100]" onClick={(e) => e.stopPropagation()}>
+                          <>
+                            {/* BACKDROP */}
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.25 }}
+                              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
+                              onClick={() => { setActivePicker(null); setCalView('days'); }}
+                            />
 
-                            {/* CALENDAR HEADER (Click to switch view) */}
-                            <div className="flex justify-between items-center mb-4 text-white text-xs font-bold">
-                              {calView === 'days' && <button type="button" onClick={() => setTempDate(new Date(tempDate.setMonth(tempDate.getMonth() - 1)))} className="p-1 hover:bg-slate-800 rounded"><ChevronLeft size={16} /></button>}
+                            {/* CENTERED CARD */}
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                              transition={{ type: 'spring', damping: 26, stiffness: 380 }}
+                              className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="w-[280px] bg-[#0F1623] border border-slate-700/60 rounded-2xl shadow-[0_12px_50px_rgba(0,0,0,0.7)] p-4 pointer-events-auto relative">
 
-                              <button type="button" onClick={() => setCalView(calView === 'days' ? 'years' : 'days')} className="uppercase tracking-widest hover:text-cyan-400 transition-colors">
-                                {calView === 'days' ? tempDate.toLocaleString('default', { month: 'short', year: 'numeric' }) : 'Select Year'}
-                              </button>
+                                {/* CLOSE */}
+                                <motion.button whileHover={{ scale: 1.15, rotate: 90 }} whileTap={{ scale: 0.9 }}
+                                  type="button" onClick={() => { setActivePicker(null); setCalView('days'); }}
+                                  className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-slate-800/80 border border-slate-700/50 flex items-center justify-center text-slate-400 hover:text-white hover:bg-red-500/20 transition-colors z-10"
+                                ><X size={12} /></motion.button>
 
-                              {calView === 'days' && <button type="button" onClick={() => setTempDate(new Date(tempDate.setMonth(tempDate.getMonth() + 1)))} className="p-1 hover:bg-slate-800 rounded"><ChevronRight size={16} /></button>}
-                            </div>
+                                {/* TITLE */}
+                                <p className="text-[8px] font-black text-cyan-400 uppercase tracking-[3px] mb-3">Select Date</p>
 
-                            {/* DAYS VIEW */}
-                            {calView === 'days' ? (
-                              <div className="grid grid-cols-7 gap-1 mb-2 text-center">
-                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <span key={d} className="text-[9px] text-slate-500 font-bold">{d}</span>)}
-                                {Array.from({ length: new Date(tempDate.getFullYear(), tempDate.getMonth(), 1).getDay() }).map((_, i) => <div key={`e-${i}`} />)}
-                                {Array.from({ length: new Date(tempDate.getFullYear(), tempDate.getMonth() + 1, 0).getDate() }).map((_, i) => (
-                                  <button type="button" key={i} onClick={() => handleDateSelect(field.name, new Date(tempDate.getFullYear(), tempDate.getMonth(), i + 1))} className={`h-7 w-7 rounded-lg text-[10px] font-bold ${tempDate.getDate() === i + 1 ? 'bg-white text-black shadow-lg' : 'text-slate-400 hover:bg-slate-800'}`}>{i + 1}</button>
-                                ))}
+                                {/* HEADER */}
+                                <div className="flex justify-between items-center mb-3">
+                                  {calView === 'days' && (
+                                    <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
+                                      type="button" onClick={() => setTempDate(new Date(tempDate.getFullYear(), tempDate.getMonth() - 1, 1))}
+                                      className="w-7 h-7 rounded-lg bg-slate-800/60 border border-slate-700/40 flex items-center justify-center text-slate-400 hover:text-cyan-400 transition-all"
+                                    ><ChevronLeft size={14} /></motion.button>
+                                  )}
+
+                                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                                    type="button" onClick={() => setCalView(calView === 'days' ? 'years' : 'days')}
+                                    className="text-[11px] font-black text-white uppercase tracking-wider hover:text-cyan-400 transition-colors px-2 py-0.5 rounded-md"
+                                  >
+                                    {calView === 'days' ? tempDate.toLocaleString('default', { month: 'short', year: 'numeric' }) : '← Back'}
+                                  </motion.button>
+
+                                  {calView === 'days' && (
+                                    <motion.button whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
+                                      type="button" onClick={() => setTempDate(new Date(tempDate.getFullYear(), tempDate.getMonth() + 1, 1))}
+                                      className="w-7 h-7 rounded-lg bg-slate-800/60 border border-slate-700/40 flex items-center justify-center text-slate-400 hover:text-cyan-400 transition-all"
+                                    ><ChevronRight size={14} /></motion.button>
+                                  )}
+                                </div>
+
+                                {/* CONTENT */}
+                                <AnimatePresence mode="wait">
+                                  {calView === 'days' ? (
+                                    <motion.div key="days" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                                      {/* Day headers */}
+                                      <div className="grid grid-cols-7 gap-0.5 mb-1.5 text-center">
+                                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                                          <span key={`${d}-${i}`} className="text-[8px] text-slate-500 font-bold py-0.5">{d}</span>
+                                        ))}
+                                      </div>
+                                      {/* Day cells */}
+                                      <div className="grid grid-cols-7 gap-0.5 mb-2">
+                                        {Array.from({ length: new Date(tempDate.getFullYear(), tempDate.getMonth(), 1).getDay() }).map((_, i) => <div key={`e-${i}`} />)}
+                                        {Array.from({ length: new Date(tempDate.getFullYear(), tempDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
+                                          const day = i + 1;
+                                          const isToday = new Date().getDate() === day && new Date().getMonth() === tempDate.getMonth() && new Date().getFullYear() === tempDate.getFullYear();
+                                          return (
+                                            <motion.button key={`d-${i}`}
+                                              whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.85 }}
+                                              type="button" onClick={() => handleDateSelect(field.name, new Date(tempDate.getFullYear(), tempDate.getMonth(), day))}
+                                              className={`h-7 w-7 rounded-lg text-[10px] font-bold transition-all ${isToday
+                                                ? 'bg-cyan-500 text-white shadow-[0_0_12px_rgba(6,182,212,0.4)]'
+                                                : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
+                                                }`}
+                                            >{day}</motion.button>
+                                          );
+                                        })}
+                                      </div>
+                                    </motion.div>
+                                  ) : (
+                                    <motion.div key="years" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
+                                      className="grid grid-cols-4 gap-1.5 max-h-40 overflow-y-auto custom-scrollbar py-0.5"
+                                    >
+                                      {yearsList.map(y => (
+                                        <motion.button key={y} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}
+                                          type="button" onClick={() => { setTempDate(new Date(y, tempDate.getMonth(), 1)); setCalView('days'); }}
+                                          className={`py-1.5 rounded-lg text-[10px] font-bold transition-all ${tempDate.getFullYear() === y
+                                            ? 'bg-cyan-500 text-white shadow-[0_0_10px_rgba(6,182,212,0.3)]'
+                                            : 'text-slate-400 hover:bg-slate-700/50 hover:text-white'
+                                            }`}
+                                        >{y}</motion.button>
+                                      ))}
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+
+                                {/* SELECT TODAY */}
+                                {calView === 'days' && (
+                                  <div className="text-center pt-2 border-t border-slate-800/50">
+                                    <button type="button" onClick={() => handleDateSelect(field.name, new Date())}
+                                      className="text-[9px] font-black text-cyan-400 uppercase tracking-[2px] hover:text-white transition-colors"
+                                    >⚡ Today</button>
+                                  </div>
+                                )}
                               </div>
-                            ) : (
-                              /* YEARS VIEW (Scrollable Grid) */
-                              <div className="grid grid-cols-4 gap-2 h-40 overflow-y-auto custom-scrollbar">
-                                {yearsList.map(y => (
-                                  <button key={y} type="button" onClick={() => { setTempDate(new Date(y, tempDate.getMonth(), 1)); setCalView('days'); }} className={`py-2 rounded-lg text-[10px] font-bold ${tempDate.getFullYear() === y ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>{y}</button>
-                                ))}
-                              </div>
-                            )}
-
-                            {calView === 'days' && (
-                              <div className="text-center pt-2 border-t border-slate-800">
-                                <button type="button" onClick={() => handleDateSelect(field.name, new Date())} className="text-[9px] font-black text-cyan-400 uppercase tracking-widest hover:text-white">Select Today</button>
-                              </div>
-                            )}
-                          </motion.div>
+                            </motion.div>
+                          </>
                         )}
                       </AnimatePresence>
                     </div>
@@ -425,11 +501,11 @@ const Issuer = () => {
         <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} disabled={isSubmitting} className={`w-full py-4 rounded-xl font-black text-xs uppercase tracking-[3px] flex items-center justify-center gap-2 mt-6 transition-all ${isSubmitting ? 'bg-slate-800' : 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg'}`}>
           {isSubmitting ? <Cpu className="animate-spin" size={16} /> : <ShieldCheck size={16} />} {isSubmitting ? "ENCRYPTING..." : "ISSUE ID"}
         </motion.button>
-      </form>
+      </form >
 
 
 
-    </div>
+    </div >
   );
 };
 
