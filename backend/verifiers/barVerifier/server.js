@@ -137,7 +137,7 @@ app.post("/verify", async (req, res) => {
   try {
     console.log(req.body.messages);
 
-    const { id, nonce, proofs, nullifier, zkProof, zkProofs, verificationFailed, failureReason } = req.body;
+    const { id, nonce, proofs, nullifier, zkProof, zkProofs, verificationFailed, failureReason, revocationIndex } = req.body;
 
     if (!nullifier) {
       return res.status(400).json({ error: "Nullifier is required." });
@@ -249,6 +249,33 @@ app.post("/verify", async (req, res) => {
         return res.json({ access: "DENIED", reason: zkReason, nullifier });
       }
       console.log("✅ zk-SNARK proof verified successfully!");
+    }
+
+    // 5.6️⃣ Revocation check — query the issuer's accumulator
+    if (revocationIndex != null) {
+      try {
+        console.log(`🔍 Checking revocation status for index ${revocationIndex}...`);
+        const revRes = await fetch("http://localhost:5000/api/revocation/state");
+        const revData = await revRes.json();
+
+        if (revData.revokedIndices && revData.revokedIndices.includes(revocationIndex)) {
+          console.log("❌ Credential revoked at index", revocationIndex);
+          request.failedUsers = request.failedUsers || [];
+          request.failedUsers.push({
+            subjectId: nullifier,
+            timestamp: new Date().toISOString(),
+            reason: "Credential has been revoked"
+          });
+          return res.json({ access: "DENIED", reason: "Credential has been revoked", nullifier });
+        }
+        console.log("✅ Credential is not revoked.");
+      } catch (revErr) {
+        console.error("⚠️ Could not reach issuer for revocation check:", revErr.message);
+        // Fail open or fail closed — here we fail closed for safety
+        return res.json({ access: "DENIED", reason: "Unable to verify revocation status", nullifier });
+      }
+    } else {
+      console.log("ℹ️ No revocationIndex provided — skipping revocation check (backward compatible).");
     }
 
     // 6️⃣ Mark request as verified

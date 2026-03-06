@@ -329,6 +329,7 @@ const Verifier = () => {
           nonce: proofRequest.nonce,
           proofs: proof,
           nullifier,
+          revocationIndex: selectedMapping[Object.keys(selectedMapping)[0]]?.credentialStatus?.index ?? null,
           verificationFailed: true,
           failureReason
         };
@@ -367,7 +368,8 @@ const Verifier = () => {
         id: proofRequest.id,
         nonce: proofRequest.nonce,
         proofs: proof,
-        nullifier
+        nullifier,
+        revocationIndex: selectedMapping[Object.keys(selectedMapping)[0]]?.credentialStatus?.index ?? null
       }
       if (Object.keys(zkProofs).length > 0) {
         verifyPayload.zkProof = zkProof  // backward compat for age
@@ -594,6 +596,7 @@ const Verifier = () => {
                   nonce: effectiveRequest.nonce,
                   proofs: proof,
                   nullifier: failNullifier,
+                  revocationIndex: vc?.credentialStatus?.index ?? null,
                   verificationFailed: true,
                   failureReason: "zk-SNARK proof could not be generated — constraint not satisfied"
                 })
