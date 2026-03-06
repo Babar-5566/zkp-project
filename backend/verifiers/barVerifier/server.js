@@ -79,7 +79,8 @@ app.post("/create-proof-request", (req, res) => {
     requests[proofRequest.id] = {
       ...proofRequest,
       status: "pending",
-      verifiedUsers: []
+      verifiedUsers: [],
+      failedUsers: []
     };
 
     res.json(proofRequest);
@@ -136,7 +137,7 @@ app.post("/verify", async (req, res) => {
   try {
     console.log(req.body.messages);
 
-    const { id, nonce, proofs, nullifier, zkProof } = req.body;
+    const { id, nonce, proofs, nullifier, zkProof, verificationFailed, failureReason } = req.body;
 
     if (!nullifier) {
       return res.status(400).json({ error: "Nullifier is required." });
@@ -174,6 +175,18 @@ app.post("/verify", async (req, res) => {
       return res.status(400).json({ error: "Invalid nonce" });
     }
 
+    // 🛑 Handle pre-failed submissions (holder already knows it failed)
+    if (verificationFailed) {
+      console.log("❌ Pre-failed verification received:", failureReason);
+      request.failedUsers = request.failedUsers || [];
+      request.failedUsers.push({
+        subjectId: nullifier,
+        timestamp: new Date().toISOString(),
+        reason: failureReason || "Unknown failure"
+      });
+      return res.json({ access: "DENIED", reason: failureReason || "Unknown failure", nullifier });
+    }
+
     // 4️⃣ Validate proofs exist
     if (!proofs || !Array.isArray(proofs) || proofs.length === 0) {
       console.log("No proofs provided");
@@ -188,18 +201,32 @@ app.post("/verify", async (req, res) => {
     });
 
     if (!result.verified) {
-      return res.json({ access: "DENIED" });
+      console.log("❌ BBS+ proof verification failed!");
+      request.failedUsers = request.failedUsers || [];
+      request.failedUsers.push({
+        subjectId: nullifier,
+        timestamp: new Date().toISOString(),
+        reason: "BBS+ proof verification failed"
+      });
+      return res.json({ access: "DENIED", reason: "BBS+ proof verification failed", nullifier });
     }
 
     // 5.5️⃣ Verify zk-SNARK proof (if present)
     if (zkProof && zkProof.proof && zkProof.publicSignals) {
       console.log("🔐 zk-SNARK proof received. Verifying...");
       const { verifyAgeProof } = require("./zkVerifier");
-      const zkValid = await verifyAgeProof(zkProof.proof, zkProof.publicSignals);
+      const zkResult = await verifyAgeProof(zkProof.proof, zkProof.publicSignals);
 
-      if (!zkValid) {
-        console.log("❌ zk-SNARK proof verification failed!");
-        return res.json({ access: "DENIED", reason: "zk-SNARK proof invalid" });
+      if (!zkResult.valid) {
+        const zkReason = zkResult.reason || "zk-SNARK proof invalid";
+        console.log("❌ zk-SNARK proof verification failed:", zkReason);
+        request.failedUsers = request.failedUsers || [];
+        request.failedUsers.push({
+          subjectId: nullifier,
+          timestamp: new Date().toISOString(),
+          reason: zkReason
+        });
+        return res.json({ access: "DENIED", reason: zkReason, nullifier });
       }
       console.log("✅ zk-SNARK proof verified successfully!");
     }
@@ -232,7 +259,8 @@ app.get("/request-status", (req, res) => {
   }
   res.json({
     status: request.status || "pending",
-    verifiedUsers: request.verifiedUsers || []
+    verifiedUsers: request.verifiedUsers || [],
+    failedUsers: request.failedUsers || []
   });
 });
 

@@ -262,13 +262,7 @@ const Verifier = () => {
         }
       }
 
-      // If zk-SNARK was required but failed, abort
-      if (rangePredicates.length > 0 && !zkProof) {
-        setStatus("error")
-        return
-      }
-
-      // 🔐 Generate nullifier
+      // 🔐 Generate nullifier FIRST (needed for both success and failure flows)
       const holderSecret = localStorage.getItem("holderSecret")
 
       if (!holderSecret) {
@@ -283,6 +277,41 @@ const Verifier = () => {
       const nullifier = hashArray
         .map(b => b.toString(16).padStart(2, '0'))
         .join('')
+
+      // If zk-SNARK was required but failed, still notify verifier
+      if (rangePredicates.length > 0 && !zkProof) {
+        const failureReason = "zk-SNARK age proof could not be generated — age below threshold"
+
+        // Send failure info to verifier with nullifier
+        const failPayload = {
+          id: proofRequest.id,
+          nonce: proofRequest.nonce,
+          proofs: proof,
+          nullifier,
+          verificationFailed: true,
+          failureReason
+        };
+
+        try {
+          await fetch(
+            (proofRequest.proofRequest ?? proofRequest).response_uri,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(failPayload)
+            }
+          );
+          addLog(`Failure reported to verifier ❌`, "error");
+          addLog(`Reason: ${failureReason}`);
+          addLog(`Nullifier: ${nullifier.substring(0, 5)}...${nullifier.substring(nullifier.length - 5)}`);
+        } catch (sendErr) {
+          console.error("Failed to send failure to verifier:", sendErr);
+          addLog("Could not reach verifier to report failure", "error");
+        }
+
+        setStatus("error")
+        return
+      }
 
       addLog("Proof generated successfully ✅", "success")
 
@@ -453,9 +482,42 @@ const Verifier = () => {
         }
       }
 
-      // If zk-SNARK was required but failed, abort
+      // If zk-SNARK was required but failed, report to verifier if possible
       if (rangePredsLocal.length > 0 && !zkProofResult) {
         addLog("Proof generation failed — zk-SNARK required but could not be generated ❌", "error")
+
+        // If there's a real verifier endpoint, report the failure with nullifier
+        const responseUri = effectiveRequest?.response_uri || (proofRequest?.proofRequest ?? proofRequest)?.response_uri
+        if (responseUri && proofRequest) {
+          try {
+            // Generate nullifier for failure reporting
+            const holderSecret = localStorage.getItem("holderSecret")
+            if (holderSecret) {
+              const encoder = new TextEncoder()
+              const data = encoder.encode(holderSecret + (proofRequest.id || ""))
+              const hashBuffer = await crypto.subtle.digest("SHA-256", data)
+              const hashArray = Array.from(new Uint8Array(hashBuffer))
+              const failNullifier = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+              await fetch(responseUri, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  id: proofRequest.id,
+                  nonce: effectiveRequest.nonce,
+                  proofs: proof,
+                  nullifier: failNullifier,
+                  verificationFailed: true,
+                  failureReason: "zk-SNARK age proof could not be generated — age below threshold"
+                })
+              })
+              addLog("Failure reported to verifier with nullifier", "error")
+            }
+          } catch (sendErr) {
+            console.error("Failed to send failure to verifier:", sendErr)
+          }
+        }
+
         setStatus("error")
         return
       }
