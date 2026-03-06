@@ -3,5 +3,9 @@
   "revokedIndices": [
     1
   ],
+<<<<<<< HEAD
   "nextIndex": 70
+=======
+  "nextIndex": 57
+>>>>>>> main
 }
