@@ -55,59 +55,7 @@ app.post("/wallet/storeAadhaar", (req, res) => {
     }
 });
 
-/**
- * Generate predicate proof (age >= 18)
- */
-app.get("/wallet/proveAge", async (req, res) => {
-    try {
-        const proof = await generateProof();
-        res.json(proof);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-});
 
-/**
- * [DEPRECATED] Generate zk-SNARK proof (age >= threshold)
- * ZK proof generation has moved to the FRONTEND (in-browser via snarkjs).
- * This endpoint is kept for backward compatibility only.
- * Body: { dob: "DD/MM/YYYY", threshold: 18 }
- */
-const { generateAgeProof } = require("./prover");
-
-app.post("/wallet/zkproof", async (req, res) => {
-    try {
-        const { dob, threshold } = req.body;
-
-        if (!dob || !threshold) {
-            return res.status(400).json({ error: "Missing dob or threshold" });
-        }
-
-        // Calculate age from dob string (DD/MM/YYYY)
-        const parts = dob.split("/");
-        const birthDate = new Date(
-            parseInt(parts[2]),      // year
-            parseInt(parts[1]) - 1,  // month (0-indexed)
-            parseInt(parts[0])       // day
-        );
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-        }
-
-        console.log(`🔐 zk-SNARK: Generating proof for age=${age}, threshold=${threshold}`);
-
-        const { proof, publicSignals } = await generateAgeProof(age, parseInt(threshold));
-
-        res.json({ proof, publicSignals });
-
-    } catch (err) {
-        console.error("zk-SNARK proof generation failed:", err);
-        res.status(500).json({ error: "zk-SNARK proof generation failed: " + err.message });
-    }
-});
 
 /* ================= SERVER START ================= */
 
