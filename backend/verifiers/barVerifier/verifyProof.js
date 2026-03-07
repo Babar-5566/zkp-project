@@ -21,14 +21,14 @@ async function verifyProof({ proofs, nonce, request }) {
     try {
       const proofBytes = base64ToUint8Array(proofObj.proof);
 
-      // const messageBytes = proofObj.messages.map(msg =>
-      //   new TextEncoder().encode(msg)
-      // );
+      const messageBytes = proofObj.messages.map(msg =>
+        new TextEncoder().encode(msg)
+      );
 
       const verified = await blsVerifyProof({
         proof: proofBytes,
         publicKey: publicKeyBytes,
-        // messages: "messageBytes",
+        messages: messageBytes,
         nonce: nonceBytes
       });
 
