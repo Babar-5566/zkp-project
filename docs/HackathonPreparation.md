@@ -134,7 +134,7 @@ This teammate will explain the **big picture of the system**.
 
 ---
 
-# Credentials & Revocation - 
+# Credentials & Revocation - Kaustabha Chowdhury
 
 Assigned prompts:
 
