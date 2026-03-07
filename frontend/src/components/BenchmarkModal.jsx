@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, animate } from 'framer-motion';
-import { Activity, Clock, Cpu, Database, X, Zap, BarChart3, ShieldCheck, Signal, Server, Code2, User, Layers } from 'lucide-react';
+import { Activity, Clock, Cpu, Database, X, Zap, BarChart3, ShieldCheck, Signal, Server, Code2, User, Layers, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTelemetry } from '../context/TelemetryContext';
 
 // ==========================================
@@ -79,9 +79,17 @@ const AnimatedCounter = ({ value, suffix = "" }) => {
 // 3️⃣ MAIN MODAL COMPONENT (Context-Driven)
 // ==========================================
 const BenchmarkModal = () => {
-  const { isOpen, closeTelemetry, openTelemetry, isCollecting, metrics, fetchServerMetrics } = useTelemetry();
+  const { isOpen, closeTelemetry, openTelemetry, isCollecting, metrics, history, fetchServerMetrics } = useTelemetry();
   const [loadingPhase, setLoadingPhase] = useState(0);
   const [serverMetrics, setServerMetrics] = useState(null);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  // Reset index when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setHistoryIndex(0);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isCollecting) {
@@ -97,11 +105,14 @@ const BenchmarkModal = () => {
     }
   }, [isOpen, metrics]);
 
+  // Use history item if available, otherwise fallback to metrics
+  const displaySource = (history && history.length > 0) ? history[historyIndex] : metrics;
+
   // Merge frontend + server metrics
-  const displayMetrics = metrics ? {
-    ...metrics,
-    cpuUsage: serverMetrics?.cpuUsage || metrics.cpuUsage || '0',
-    ramUsage: serverMetrics?.ramUsage || metrics.ramUsage || '0',
+  const displayMetrics = displaySource ? {
+    ...displaySource,
+    cpuUsage: serverMetrics?.cpuUsage || displaySource.cpuUsage || '0',
+    ramUsage: serverMetrics?.ramUsage || displaySource.ramUsage || '0',
     network: serverMetrics?.network || 'Optimal'
   } : null;
 
@@ -177,14 +188,41 @@ const BenchmarkModal = () => {
                     </p>
                   </div>
                 </div>
-                <motion.button
-                  whileHover={{ rotate: -90, scale: 1.1, backgroundColor: "rgba(255,255,255,0.05)" }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={closeTelemetry}
-                  className="p-2 bg-white/5 border border-transparent hover:border-white/10 rounded-full text-slate-400 hover:text-white transition-all duration-300 cursor-pointer"
-                >
-                  <X size={16} />
-                </motion.button>
+                <div className="flex items-center gap-2 sm:gap-4 z-50">
+                  {/* NAVIGATION BUTTONS for history */}
+                  {history && history.length > 1 && (
+                    <div className="flex items-center gap-2 sm:gap-3 bg-white/5 border border-white/10 rounded-full px-2 py-1.5 sm:px-3 sm:py-1.5">
+                      <button
+                        onClick={() => setHistoryIndex(prev => Math.min(prev + 1, history.length - 1))}
+                        disabled={historyIndex === history.length - 1}
+                        className="p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent transition-colors pointer-events-auto"
+                        title="Older scan"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <span className="text-[9px] sm:text-xs text-cyan-400 font-mono font-bold tracking-widest whitespace-nowrap">
+                        {history.length - historyIndex} / {history.length}
+                      </span>
+                      <button
+                        onClick={() => setHistoryIndex(prev => Math.max(prev - 1, 0))}
+                        disabled={historyIndex === 0}
+                        className="p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent transition-colors pointer-events-auto"
+                        title="Newer scan"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  )}
+
+                  <motion.button
+                    whileHover={{ rotate: -90, scale: 1.1, backgroundColor: "rgba(255,255,255,0.05)" }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={closeTelemetry}
+                    className="p-2 bg-white/5 border border-transparent hover:border-white/10 rounded-full text-slate-400 hover:text-white transition-all duration-300 cursor-pointer pointer-events-auto"
+                  >
+                    <X size={16} />
+                  </motion.button>
+                </div>
               </div>
 
               {/* CONTENT AREA */}

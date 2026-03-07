@@ -102,6 +102,7 @@ const Verifier = () => {
     setDisclosedFields([]);
     setLogs([]);
     setStatus("idle");
+    telemetry.clearHistory();
   };
 
   const resetForNewVerify = () => {
@@ -109,6 +110,7 @@ const Verifier = () => {
     setStatus("idle");
     setLogs([]);
     setProofData(null);
+    telemetry.clearHistory();
   };
 
   useEffect(() => {
@@ -185,6 +187,7 @@ const Verifier = () => {
 
   const handleVerifyProofClick = () => {
     setStep(4)
+    telemetry.clearHistory()
   };
 
   const isVerifyValid = verifierSelections.every((selection) => {
@@ -242,12 +245,17 @@ const Verifier = () => {
       const addLog = (msg, type) =>
         setLogs(prev => [...prev, { msg, type }])
 
+      const e2eStart = performance.now()
+      let zkSnarkTime = 0
+
       addLog("Preparing proof request...")
 
+      const bbsStart = performance.now()
       const proof = await generateBbsProof({
         mapping: selectedMapping,
         request: proofRequest.proofRequest ?? proofRequest
       })
+      const bbsTime = performance.now() - bbsStart
 
       // 🔐 Generate zk-SNARK proofs for ALL PLONK predicates
       const zkProofs = {}
@@ -390,13 +398,32 @@ const Verifier = () => {
         "nullifier:" + nullifier
       );
 
+      // Calculate proof type display correct string
+      const numAttributes = (currentRequest.requested_attributes || []).length
+      const numZk = Object.keys(zkProofs).length
+      let proofTypeStr = 'BBS+ Only'
+      if (numAttributes > 0 && numZk > 0) {
+        proofTypeStr = `BBS+ + zk-SNARK (PLONK × ${numZk})`
+      } else if (numZk > 0) {
+        proofTypeStr = `zk-SNARK (PLONK × ${numZk})`
+      }
+
+      // Calculate proof size and timing
+      const proofSizeBytes = JSON.stringify(proof).length + (Object.keys(zkProofs).length > 0 ? JSON.stringify(zkProofs).length : 0)
+      const proverTimeMs = Math.round(bbsTime + zkSnarkTime)
+      const e2eMs = Math.round(performance.now() - e2eStart)
+
       // send proof to verifier backend
       const verifyPayload = {
         id: proofRequest.id,
         nonce: proofRequest.nonce,
         proofs: proof,
         nullifier,
-        revocationIndex: selectedMapping[Object.keys(selectedMapping)[0]]?.credentialStatus?.index ?? null
+        revocationIndex: selectedMapping[Object.keys(selectedMapping)[0]]?.credentialStatus?.index ?? null,
+        proverTimeMs,
+        proofSizeBytes,
+        e2eMs,
+        proofType: proofTypeStr
       }
       if (Object.keys(zkProofs).length > 0) {
         verifyPayload.zkProof = zkProof  // backward compat for age
@@ -668,13 +695,23 @@ const Verifier = () => {
       addLog("Proof generated successfully ✅", "success")
 
       // Calculate proof size
-      const proofSizeBytes = JSON.stringify(proof).length + (zkProofResult ? JSON.stringify(zkProofResult).length : 0)
+      const proofSizeBytes = JSON.stringify(proof).length + (Object.keys(zkProofsLocal).length > 0 ? JSON.stringify(zkProofsLocal).length : 0)
       const proofSizeKB = (proofSizeBytes / 1024).toFixed(1)
 
       const endToEndMs = performance.now() - e2eStart
 
+      // Calculate accurate proof type string
+      const numAttributesLocal = (effectiveRequest.requested_attributes || []).length
+      const numZkLocal = Object.keys(zkProofsLocal).length
+      let proofTypeStrLocal = 'BBS+ Only'
+      if (numAttributesLocal > 0 && numZkLocal > 0) {
+        proofTypeStrLocal = `BBS+ + zk-SNARK (PLONK × ${numZkLocal})`
+      } else if (numZkLocal > 0) {
+        proofTypeStrLocal = `zk-SNARK (PLONK × ${numZkLocal})`
+      }
+
       // Collect the server metrics that were fetched concurrently
-      let serverCpu = 2.5, serverRam = 45, verifierTimeMs = 0
+      let serverCpu = 2.5, serverRam = 45
       try {
         const results = await metricsPromise
         const issuer = results[0]?.status === 'fulfilled' ? results[0].value : {}
@@ -685,19 +722,18 @@ const Verifier = () => {
         const ramV = parseFloat(verifier.memoryMB) || 0
         serverCpu = Math.max(cpuI, cpuV, 2.0) // min 2% when active
         serverRam = ramI + ramV
-        verifierTimeMs = verifier.lastVerifyTiming?.verifyTimeMs || 0
       } catch (e) { /* fallback values used */ }
 
       // Record real-time telemetry
       telemetry.setMetrics({
         proverTime: Math.round(bbsTime + zkSnarkTime) + 'ms',
-        verifierTime: verifierTimeMs > 0 ? verifierTimeMs + 'ms' : Math.round(bbsTime * 0.15) + 'ms',
+        verifierTime: 'Awaiting Scan...',
         proofSize: proofSizeKB + 'KB',
         latency: Math.round(endToEndMs) + 'ms',
         cpuUsage: serverCpu.toFixed(1),
         ramUsage: serverRam.toFixed(1),
         proofGeneratedBy: vc?.type?.find(t => t !== 'VerifiableCredential')?.replace('Credential', '')?.replace(/([A-Z])/g, ' $1')?.trim() || 'Unknown Card',
-        proofType: Object.keys(zkProofsLocal).length > 0 ? `BBS+ + zk-SNARK (PLONK × ${Object.keys(zkProofsLocal).length})` : 'BBS+ Only'
+        proofType: proofTypeStrLocal
       })
 
       setProofData(proof)
@@ -1152,7 +1188,7 @@ const Verifier = () => {
 
               {/* 👇 NEW BUTTON TO GO BACK TO THE FORM */}
               <button
-                onClick={() => setQrLink(null)} // Assuming setQrLink is your state setter!
+                onClick={() => { setQrLink(null); telemetry.clearHistory(); }}
                 className="mt-10 mb-10 px-6 py-3 bg-slate-800/50 border border-slate-700 hover:border-orange-500 rounded-xl font-bold text-slate-300 hover:text-orange-400 text-[10px] uppercase tracking-[2px] transition-all flex items-center gap-2 group"
               >
                 <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
