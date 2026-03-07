@@ -69,11 +69,21 @@ export const getFieldsByIdType = (idType) => {
         { name: 'gender', label: 'Gender', type: 'custom-select', options: ['Male', 'Female', 'Other'], icon: Users, required: true, predicates: ['existence', 'reveal', 'equality', 'set membership'] },
         { name: 'address', label: 'Address', type: 'text', icon: MapPin, required: true, predicates: ['existence', 'reveal', 'hash', 'string match', 'extract location'] },
         { name: 'photoVerified', label: 'Photo KYC', type: 'custom-select', options: ['Yes', 'No'], icon: UserCheck, required: true, predicates: ['existence', 'reveal', 'equality', 'set membership'] },
+        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'aadhaarNumber', label: 'Aadhaar Number', type: 'number', icon: Hash, placeholder: '1234 5678 XXXX', required: true, maxLength: 12, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
+        { name: 'gender', label: 'Gender', type: 'custom-select', options: ['Male', 'Female', 'Other'], icon: Users, required: true, predicates: ['existence', 'reveal', 'equality', 'set membership'] },
+        { name: 'address', label: 'Address', type: 'text', icon: MapPin, required: true, predicates: ['existence', 'reveal', 'hash', 'string match', 'extract location'] },
+        { name: 'photoVerified', label: 'Photo KYC', type: 'custom-select', options: ['Yes', 'No'], icon: UserCheck, required: true, predicates: ['existence', 'reveal', 'equality', 'set membership'] },
         ...commonAuth
       ];
 
     case 'PAN Card':
       return [
+        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'panID', label: 'PAN Number', type: 'text', icon: CreditCard, placeholder: 'ABCDE1234F', required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'guardianName', label: 'Father/Guardian Name', type: 'text', icon: Users, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
         { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
         { name: 'panID', label: 'PAN Number', type: 'text', icon: CreditCard, placeholder: 'ABCDE1234F', required: true, predicates: ['existence', 'reveal', 'hash'] },
         { name: 'guardianName', label: 'Father/Guardian Name', type: 'text', icon: Users, required: true, predicates: ['existence', 'reveal', 'hash'] },
@@ -98,11 +108,21 @@ export const getFieldsByIdType = (idType) => {
         { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
         { name: 'issueDate', label: 'Issue Date', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison'] },
         { name: 'expiryDate', label: 'Valid Till', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison'] },
+        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'licenseID', label: 'License Number', type: 'text', icon: Car, placeholder: 'DL-1420110012345', required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
+        { name: 'issueDate', label: 'Issue Date', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison'] },
+        { name: 'expiryDate', label: 'Valid Till', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison'] },
         ...commonAuth
       ];
 
     case 'Birth Certificate':
       return [
+        { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
+        { name: 'placeOfBirth', label: 'Place of Birth', type: 'text', icon: MapPin, required: true, predicates: ['existence', 'reveal', 'string match'] },
+        { name: 'fatherName', label: "Father's Name", type: 'text', icon: Users, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'motherName', label: "Mother's Name", type: 'text', icon: Users, required: true, predicates: ['existence', 'reveal', 'hash'] },
         { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
         { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
         { name: 'placeOfBirth', label: 'Place of Birth', type: 'text', icon: MapPin, required: true, predicates: ['existence', 'reveal', 'string match'] },
@@ -138,6 +158,10 @@ export const getFieldsByIdType = (idType) => {
     // --- UNIVERSITY LEVEL ---
     case 'University Degree':
       return [
+        { name: 'fullName', label: 'Student Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'university', label: 'University Name', type: 'custom-uni', icon: GraduationCap, placeholder: 'Select University', required: true, predicates: ['existence', 'reveal', 'string match'] },
+        { name: 'rollNumber', label: 'Registration / Roll No', type: 'text', icon: UserCheck, required: true, simulateVerify: true, predicates: ['existence', 'reveal', 'hash'] },
+        { name: 'passingYear', label: 'Year of Passing', type: 'custom-year', icon: Calendar, required: true, defaultValue: getCurrentYear, predicates: ['existence', 'reveal', 'numeric/range'] },
         { name: 'fullName', label: 'Student Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
         { name: 'university', label: 'University Name', type: 'custom-uni', icon: GraduationCap, placeholder: 'Select University', required: true, predicates: ['existence', 'reveal', 'string match'] },
         { name: 'rollNumber', label: 'Registration / Roll No', type: 'text', icon: UserCheck, required: true, simulateVerify: true, predicates: ['existence', 'reveal', 'hash'] },
@@ -210,4 +234,4 @@ export const predicateInfo = {
     requiresInput: false,
     inputType: null
   },
-};
+};
