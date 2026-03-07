@@ -109,7 +109,7 @@ Each teammate should be able to:
 # Team Topic Distribution
 
 The topics are divided so that **each teammate becomes an expert in two domains**.
-
+Teammate-Justin Samrat Rozario-System Architecture and Secuirity.
 ---
 
 # System Architecture & Security - 
