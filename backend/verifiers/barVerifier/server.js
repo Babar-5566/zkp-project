@@ -9,6 +9,11 @@ const fs = require("fs");
 const path = require("path");
 const usedNullifiers = new Set();
 
+// Rate limiter: track attempts per request ID
+const MAX_ATTEMPTS_PER_REQUEST = 3;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 60 seconds
+const requestAttempts = {}; // { requestId: { count, firstAttemptAt } }
+
 const app = express();
 
 app.use(cors());
@@ -143,15 +148,29 @@ app.post("/verify", async (req, res) => {
       return res.status(400).json({ error: "Nullifier is required." });
     }
 
-    // Check korche aage ei proof use hoiche kina
+    // Check if this proof was already successfully used
     if (usedNullifiers.has(nullifier)) {
       console.log("❌ Double-spending detected! This proof was already used.");
       return res.status(400).json({ error: "This proof has already been used." });
     }
 
-    // Notun proof hole Set e add kore nebe
-    usedNullifiers.add(nullifier);
-    console.log("✅ Nullifier accepted. Verifying proof...");
+    // Rate limit: max attempts per request ID within time window
+    const now = Date.now();
+    if (!requestAttempts[id]) {
+      requestAttempts[id] = { count: 0, firstAttemptAt: now };
+    }
+    const tracker = requestAttempts[id];
+    // Reset window if expired
+    if (now - tracker.firstAttemptAt > RATE_LIMIT_WINDOW_MS) {
+      tracker.count = 0;
+      tracker.firstAttemptAt = now;
+    }
+    tracker.count++;
+    if (tracker.count > MAX_ATTEMPTS_PER_REQUEST) {
+      console.log(`⚠️ Rate limit exceeded for request ${id} (${tracker.count} attempts)`);
+      return res.status(429).json({ error: "Too many attempts. Please wait before trying again." });
+    }
+    console.log(`📋 Attempt ${tracker.count}/${MAX_ATTEMPTS_PER_REQUEST} for request ${id}`);
 
     // 1️⃣ Validate request ID
     if (!id || !requests[id]) {
@@ -296,6 +315,10 @@ app.post("/verify", async (req, res) => {
       timestamp: new Date().toISOString(),
       revealedAttributes
     });
+
+    // ✅ Only store nullifier AFTER successful verification (allows retry on failure)
+    usedNullifiers.add(nullifier);
+    console.log("🔒 Nullifier stored — proof cannot be reused.");
 
     return res.json({ access: "GRANTED", verifyTimeMs });
 

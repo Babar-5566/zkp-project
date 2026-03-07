@@ -1097,7 +1097,8 @@ const Verifier = () => {
                 Scan to Verify
               </h3>
 
-              <div className="relative p-[6px] rounded-2xl bg-gradient-to-r from-orange-500 to-cyan-500 animate-pulse">
+              {/* <div className="relative p-[6px] rounded-2xl bg-gradient-to-r from-orange-500 to-cyan-500 animate-pulse"> */}
+              <div className="relative p-[6px] rounded-2xl bg-gradient-to-r from-orange-500 to-cyan-500">
                 <div className="bg-white rounded-xl p-4">
                   <QRCodeCanvas value={qrLink} size={260} />
                 </div>
