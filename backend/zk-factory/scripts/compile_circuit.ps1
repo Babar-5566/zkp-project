@@ -22,7 +22,7 @@ if (-Not (Test-Path $ptauPath)) {
 }
 
 # ============================================
-# Compile and setup each circuit
+# Compile and setup each circuit (PLONK)
 # ============================================
 $circuits = @(
     "age_check",
@@ -30,7 +30,10 @@ $circuits = @(
     "range_check",
     "year_check",
     "date_check",
-    "hash_check"
+    "hash_check",
+    "set_membership",
+    "string_match",
+    "cross_field"
 )
 
 foreach ($circuit in $circuits) {
@@ -43,17 +46,13 @@ foreach ($circuit in $circuits) {
     Write-Host "Compiling $circuit.circom..."
     & $circomPath circuits\$circuit.circom --r1cs --wasm --sym -o build
 
-    # 2. Groth16 setup (Phase 2)
-    Write-Host "Generating groth16 setup for $circuit..."
-    npx snarkjs groth16 setup build\$circuit.r1cs $ptauPath build\${circuit}_0000.zkey
+    # 2. PLONK setup (universal — no Phase 2 contribution needed)
+    Write-Host "Generating PLONK setup for $circuit..."
+    npx snarkjs plonk setup build\$circuit.r1cs $ptauPath build\${circuit}.zkey
 
-    # 3. Contribute to Phase 2
-    Write-Host "Contributing to phase 2 for $circuit..."
-    echo "entropy_$circuit" | npx snarkjs zkey contribute build\${circuit}_0000.zkey build\${circuit}_final.zkey --name="1st Contributor" -v
-
-    # 4. Export verification key
+    # 3. Export verification key
     Write-Host "Exporting verification key for $circuit..."
-    npx snarkjs zkey export verificationkey build\${circuit}_final.zkey build\${circuit}_vkey.json
+    npx snarkjs zkey export verificationkey build\${circuit}.zkey build\${circuit}_vkey.json
 
     Write-Host "Done with $circuit."
 }
@@ -79,7 +78,7 @@ if (-Not (Test-Path $frontendZkDir)) {
 Write-Host "Copying artifacts to frontend/public/zk/..."
 foreach ($circuit in $circuits) {
     $wasmSrc = "build\${circuit}_js\${circuit}.wasm"
-    $zkeySrc = "build\${circuit}_final.zkey"
+    $zkeySrc = "build\${circuit}.zkey"
 
     if (Test-Path $wasmSrc) {
         Copy-Item $wasmSrc "$frontendZkDir\${circuit}.wasm" -Force
@@ -89,8 +88,8 @@ foreach ($circuit in $circuits) {
     }
 
     if (Test-Path $zkeySrc) {
-        Copy-Item $zkeySrc "$frontendZkDir\${circuit}_final.zkey" -Force
-        Write-Host "  Copied ${circuit}_final.zkey"
+        Copy-Item $zkeySrc "$frontendZkDir\${circuit}.zkey" -Force
+        Write-Host "  Copied ${circuit}.zkey"
     } else {
         Write-Host "  WARNING: $zkeySrc not found!" -ForegroundColor Yellow
     }

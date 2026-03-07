@@ -10,7 +10,7 @@ const path = require("path");
  */
 async function generateAgeProof(age, threshold) {
     const wasmPath = path.resolve(__dirname, "../zk-factory/build/age_check_js/age_check.wasm");
-    const zkeyPath = path.resolve(__dirname, "../zk-factory/build/age_check_final.zkey");
+    const zkeyPath = path.resolve(__dirname, "../zk-factory/build/age_check.zkey");
 
     // The inputs need to match the signals in your age_check.circom
     const input = {
@@ -19,7 +19,7 @@ async function generateAgeProof(age, threshold) {
     };
 
     try {
-        const { proof, publicSignals } = await snarkjs.groth16.fullProve(input, wasmPath, zkeyPath);
+        const { proof, publicSignals } = await snarkjs.plonk.fullProve(input, wasmPath, zkeyPath);
         return { proof, publicSignals };
     } catch (error) {
         console.error("Proof generation failed:", error);

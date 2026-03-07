@@ -66,9 +66,9 @@ export const getFieldsByIdType = (idType) => {
         { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
         { name: 'aadhaarNumber', label: 'Aadhaar Number', type: 'number', icon: Hash, placeholder: '1234 5678 XXXX', required: true, maxLength: 12, predicates: ['existence', 'reveal', 'hash'] },
         { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
-        { name: 'gender', label: 'Gender', type: 'custom-select', options: ['Male', 'Female', 'Other'], icon: Users, required: true, predicates: ['existence', 'reveal', 'equality'] },
-        { name: 'address', label: 'Address', type: 'text', icon: MapPin, required: true, predicates: ['existence', 'reveal', 'hash'] },
-        { name: 'photoVerified', label: 'Photo KYC', type: 'custom-select', options: ['Yes', 'No'], icon: UserCheck, required: true, predicates: ['existence', 'reveal', 'equality'] },
+        { name: 'gender', label: 'Gender', type: 'custom-select', options: ['Male', 'Female', 'Other'], icon: Users, required: true, predicates: ['existence', 'reveal', 'equality', 'set membership'] },
+        { name: 'address', label: 'Address', type: 'text', icon: MapPin, required: true, predicates: ['existence', 'reveal', 'hash', 'string match', 'extract location'] },
+        { name: 'photoVerified', label: 'Photo KYC', type: 'custom-select', options: ['Yes', 'No'], icon: UserCheck, required: true, predicates: ['existence', 'reveal', 'equality', 'set membership'] },
         ...commonAuth
       ];
 
@@ -85,7 +85,7 @@ export const getFieldsByIdType = (idType) => {
       return [
         { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
         { name: 'passportID', label: 'Passport Number', type: 'text', icon: Plane, placeholder: 'A1234567', required: true, predicates: ['existence', 'reveal', 'hash'] },
-        { name: 'nationality', label: 'Nationality', type: 'text', icon: Flag, defaultValue: "India", required: true, readOnly: true, predicates: ['existence', 'reveal', 'equality'] },
+        { name: 'nationality', label: 'Nationality', type: 'text', icon: Flag, defaultValue: "India", required: true, readOnly: true, predicates: ['existence', 'reveal', 'equality', 'set membership'] },
         { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
         { name: 'expiryDate', label: 'Date of Expiry', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison'] },
         ...commonAuth
@@ -105,7 +105,7 @@ export const getFieldsByIdType = (idType) => {
       return [
         { name: 'fullName', label: 'Full Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
         { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
-        { name: 'placeOfBirth', label: 'Place of Birth', type: 'text', icon: MapPin, required: true, predicates: ['existence', 'reveal'] },
+        { name: 'placeOfBirth', label: 'Place of Birth', type: 'text', icon: MapPin, required: true, predicates: ['existence', 'reveal', 'string match'] },
         { name: 'fatherName', label: "Father's Name", type: 'text', icon: Users, required: true, predicates: ['existence', 'reveal', 'hash'] },
         { name: 'motherName', label: "Mother's Name", type: 'text', icon: Users, required: true, predicates: ['existence', 'reveal', 'hash'] },
         ...commonAuth
@@ -116,9 +116,9 @@ export const getFieldsByIdType = (idType) => {
     case '12th Admit Card':
       return [
         { name: 'fullName', label: 'Student Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
-        { name: 'board', label: 'Board Name', type: 'custom-board', icon: BookOpen, placeholder: 'Select Board', required: true, predicates: ['existence', 'reveal', 'equality'] },
+        { name: 'board', label: 'Board Name', type: 'custom-board', icon: BookOpen, placeholder: 'Select Board', required: true, predicates: ['existence', 'reveal', 'equality', 'set membership'] },
         { name: 'rollNumber', label: 'Roll Number', type: 'text', icon: UserCheck, required: true, simulateVerify: true, predicates: ['existence', 'reveal', 'hash'] },
-        { name: 'school', label: 'School Name', type: 'text', icon: Building2, required: true, predicates: ['existence', 'reveal'] },
+        { name: 'school', label: 'School Name', type: 'text', icon: Building2, required: true, predicates: ['existence', 'reveal', 'string match'] },
         { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
         ...commonAuth
       ];
@@ -127,10 +127,10 @@ export const getFieldsByIdType = (idType) => {
     case '12th Marksheet':
       return [
         { name: 'fullName', label: 'Student Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
-        { name: 'board', label: 'Board Name', type: 'custom-board', icon: BookOpen, required: true, predicates: ['existence', 'reveal', 'equality'] },
+        { name: 'board', label: 'Board Name', type: 'custom-board', icon: BookOpen, required: true, predicates: ['existence', 'reveal', 'equality', 'set membership'] },
         { name: 'rollNumber', label: 'Roll Number', type: 'text', icon: UserCheck, required: true, simulateVerify: true, predicates: ['existence', 'reveal', 'hash'] },
-        { name: 'marks', label: 'Total Marks (%)', type: 'text', icon: FileText, placeholder: 'e.g. 85%', required: true, predicates: ['existence', 'reveal', 'numeric/range'] },
-        { name: 'school', label: 'School Name', type: 'text', icon: Building2, required: true, predicates: ['existence', 'reveal'] },
+        { name: 'marks', label: 'Total Marks (%)', type: 'text', icon: FileText, placeholder: 'e.g. 85%', required: true, predicates: ['existence', 'reveal', 'numeric/range', 'cross-field'] },
+        { name: 'school', label: 'School Name', type: 'text', icon: Building2, required: true, predicates: ['existence', 'reveal', 'string match'] },
         { name: 'dob', label: 'Date of Birth', type: 'custom-date', icon: Calendar, required: true, predicates: ['existence', 'reveal', 'date comparison', 'numeric/range'] },
         ...commonAuth
       ];
@@ -139,7 +139,7 @@ export const getFieldsByIdType = (idType) => {
     case 'University Degree':
       return [
         { name: 'fullName', label: 'Student Name', type: 'text', icon: User, required: true, predicates: ['existence', 'reveal', 'hash'] },
-        { name: 'university', label: 'University Name', type: 'custom-uni', icon: GraduationCap, placeholder: 'Select University', required: true, predicates: ['existence', 'reveal'] },
+        { name: 'university', label: 'University Name', type: 'custom-uni', icon: GraduationCap, placeholder: 'Select University', required: true, predicates: ['existence', 'reveal', 'string match'] },
         { name: 'rollNumber', label: 'Registration / Roll No', type: 'text', icon: UserCheck, required: true, simulateVerify: true, predicates: ['existence', 'reveal', 'hash'] },
         { name: 'passingYear', label: 'Year of Passing', type: 'custom-year', icon: Calendar, required: true, defaultValue: getCurrentYear, predicates: ['existence', 'reveal', 'numeric/range'] },
         ...commonAuth
@@ -163,55 +163,51 @@ export const predicateInfo = {
   },
 
   equality: {
-    message: "zk-SNARK proof — proves the categorical field matches the expected value (e.g., gender, board) without revealing it.",
+    message: "PLONK proof — proves the categorical field matches the expected value (e.g., gender, board) without revealing it.",
     requiresInput: true,
     inputType: "text"
   },
 
   "numeric/range": {
-    message: "zk-SNARK proof — enter threshold. Proves value satisfies comparison (age ≥ X, marks ≥ X, year ≤ X) without revealing actual value.",
+    message: "PLONK proof — enter threshold. Proves value satisfies comparison (age ≥ X, marks ≥ X, year ≤ X) without revealing actual value.",
     requiresInput: true,
     inputType: "numeric"
   },
 
   "date comparison": {
-    message: "zk-SNARK proof — proves the date satisfies a comparison without revealing the actual date.",
+    message: "PLONK proof — proves the date satisfies a comparison without revealing the actual date.",
     requiresInput: true,
     inputType: "date"
   },
 
   hash: {
-    message: "zk-SNARK proof — proves the field matches a Poseidon hash without revealing the value. Use for string equality in ZK.",
+    message: "PLONK proof — proves the field matches a Poseidon hash without revealing the value. Use for string equality in ZK.",
     requiresInput: true,
     inputType: "hash"   // hex only
   },
 
-  // --- v2 PLONK predicates (commented out for future implementation) ---
-  // "set membership": {
-  //   message: "PLONK proof — proves value belongs to an allowed set without revealing which one.",
-  //   requiresInput: false,
-  //   inputType: null,
-  //   comingSoon: true
-  // },
+  // --- PLONK predicates (ready for future circuit implementation) ---
+  "set membership": {
+    message: "PLONK proof — proves value belongs to an allowed set without revealing which one. Enter allowed values separated by commas.",
+    requiresInput: true,
+    inputType: "text"
+  },
 
-  // "string match": {
-  //   message: "PLONK proof — proves a string field matches a pattern without revealing the full value.",
-  //   requiresInput: true,
-  //   inputType: "text",
-  //   comingSoon: true
-  // },
+  "string match": {
+    message: "PLONK proof — proves a string field matches an expected value via Poseidon hashing without revealing either.",
+    requiresInput: true,
+    inputType: "text"
+  },
 
-  // "cross-field": {
-  //   message: "PLONK proof — proves relationships between multiple fields across credentials.",
-  //   requiresInput: false,
-  //   inputType: null,
-  //   comingSoon: true
-  // },
+  "cross-field": {
+    message: "PLONK proof — proves marks + passingYear >= threshold (combined constraint). Enter the sum threshold.",
+    requiresInput: true,
+    inputType: "numeric"
+  },
 
-  // "extract location": {
-  //   message: "Extracts city/state from address — not a proof predicate, utility only.",
-  //   requiresInput: false,
-  //   inputType: null,
-  //   comingSoon: true
-  // },
+  "extract location": {
+    message: "Extracts city/state from address — not a ZK proof, utility only. No input needed.",
+    requiresInput: false,
+    inputType: null
+  },
 };

@@ -134,7 +134,7 @@ export async function generateBbsProof({ mapping, request, context = "Default" }
  */
 export async function generateZkSnarkProof(dob, threshold) {
   // Import the in-browser ZK prover (uses snarkjs + wasm/zkey from /zk/)
-  const { generateZkProofInBrowser } = await import("./grothProver.js")
+  const { generateZkProofInBrowser } = await import("./plonkProver.js")
 
   try {
     const { proof, publicSignals } = await generateZkProofInBrowser(dob, threshold)
