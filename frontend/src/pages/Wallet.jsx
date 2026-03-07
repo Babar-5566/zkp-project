@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-// 🚀 NEW: Added 'Loader2' to the import list from lucide-react
-import { Fingerprint, Trash2, ShieldAlert, ArrowRight, Zap, AlertTriangle, Loader2 } from 'lucide-react';
+import { Fingerprint, Trash2, ShieldAlert, ArrowRight, Zap, AlertTriangle } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { getFieldsByIdType } from "../utils/schema";
-
-// 🚀 NEW BLOCK ADDED HERE: Importing our API service
-import apiService from '../api/apiService'; 
 
 // const fields = getFieldsByIdType(card.idType);
 
@@ -16,82 +12,10 @@ const Wallet = () => {
 
   const [expandedCardId, setExpandedCardId] = useState(null);
 
-  // =========================================================
-  // 🚀 ZK-SNARK Proof Generation Logic
-  // =========================================================
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [activeCardId, setActiveCardId] = useState(null); // To track which card is loading
-
-  const handleGenerateProof = async (card) => {
-    try {
-      setIsGenerating(true);
-      setActiveCardId(card.id);
-      
-      const cardName = card?.credentialSubject?.idType || "Aadhaar Card"; // 🚀 Get Card Name
-      console.log(`Initiating ZK Proof Generation for: ${cardName}`);
-      
-      const e2eStart = window.performance.now();
-
-      // Call the Wallet Backend (Port 5051)
-      const response = await apiService.generateAgeProof(cardName, 18);
-
-      const e2eEnd = window.performance.now();
-      const latencyMs = (e2eEnd - e2eStart).toFixed(0);
-
-      // Save the generated proof to localStorage so the Verifier page can access it
-      const actualProofData = response.proofData ? response.proofData : response;
-      localStorage.setItem('currentZkProof', JSON.stringify(actualProofData));
-      console.log("✅ Proof generated successfully and saved to localStorage!");
-      
-      // 🚀 INJECT REAL-TIME METRICS & SAVE TO GLOBAL MEMORY
-      const finalMetrics = (response && response.metrics) ? {
-        ...response.metrics,
-        latency: `${latencyMs} ms`,
-        networkStatus: latencyMs < 300 ? "Stable" : "Slow",
-        network: `Latency: ${latencyMs}ms`
-      } : {
-        // Fallback real-time logic just in case backend metrics fail
-        proverTime: `${(latencyMs * 0.85).toFixed(1)} ms`,
-        verifierTime: "12 ms",
-        proofSize: "897 B",
-        cpuUsage: "39%",
-        ramUsage: "124 MB",
-        latency: `${latencyMs} ms`,
-        networkStatus: latencyMs < 300 ? "Stable" : "Slow",
-        network: `Latency: ${latencyMs}ms`
-      };
-      
-      // 🚀 UPDATED: Pass Dynamic Title based on Card Name
-      localStorage.setItem('globalTelemetryData', JSON.stringify({
-        metrics: finalMetrics,
-        engineName: "ZK-SNARK (Groth16/Plonk)",
-        title: `${cardName.toUpperCase()} - ZK METRICS` // e.g., "AADHAAR CARD - ZK METRICS"
-      }));
-
-      // Move to the Verifier tab immediately
-      setActiveTab("verifier");
-    } catch (error) {
-      console.error("❌ Failed to generate proof:", error);
-      alert("Error generating proof. Is your Wallet Server (Port 5051) running?");
-    } finally {
-      setIsGenerating(false);
-      setActiveCardId(null);
-    }
-  };
-  // =========================================================
-
-  // 🚀 Clear Global Memory when cards are deleted
+  // Delete Logic
   const confirmDelete = () => {
-    if (deletingId === 'ALL') {
-        clearAllData();
-        localStorage.removeItem('globalTelemetryData'); // Clear memory
-    } else if (deletingId) {
-        deleteCredential(deletingId);
-        // If this is the last card being deleted, clear the memory
-        if (credentials.length <= 1) { 
-            localStorage.removeItem('globalTelemetryData');
-        }
-    }
+    if (deletingId === 'ALL') clearAllData();
+    else if (deletingId) deleteCredential(deletingId);
     setDeletingId(null);
   };
 
@@ -174,7 +98,7 @@ const Wallet = () => {
                     layout
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
-                    className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2 mb-2"
+                    className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2"
                   >
                     {getFieldsByIdType(card?.credentialSubject?.idType).map((field) => {
                       const value = card?.credentialSubject?.[field.name];
@@ -215,28 +139,16 @@ const Wallet = () => {
 
 
 
-                {/* ========================================================= */}
-                {/* 🚀 Generate Proof Button */}
-                {/* ========================================================= */}
+                {/* Generate proof button */}
                 <button
-                  onClick={() => handleGenerateProof(card)}
-                  disabled={isGenerating && activeCardId === card.id}
-                  className={`w-full mt-2 py-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center gap-2 transition-all ${isGenerating && activeCardId === card.id ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-800'}`}
+                  onClick={() => setActiveTab("verifier")}
+                  className="w-full mt-4 py-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-800"
                 >
-                  {/* Loading Logic for the icon */}
-                  {isGenerating && activeCardId === card.id ? (
-                    <Loader2 size={14} className="text-cyan-400 animate-spin" />
-                  ) : (
-                    <Zap size={14} className="text-cyan-400" fill="currentColor" />
-                  )}
-                  
-                  {/* Text stylized as per original intent */}
+                  <Zap size={14} className="text-cyan-400" fill="currentColor" />
                   <span className="text-[10px] font-black text-white uppercase tracking-widest">
-                    {isGenerating && activeCardId === card.id ? "Generating..." : "GENERATE PROOF"}
+                    Generate Proof
                   </span>
                 </button>
-                {/* ========================================================= */}
-
               </motion.div>
 
             ))}
@@ -271,7 +183,6 @@ const Wallet = () => {
           </div>
         )}
       </AnimatePresence>
-
     </div>
   );
 };

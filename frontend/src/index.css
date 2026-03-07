@@ -6,11 +6,15 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #020617; /* Deepest Dark Blue/Black */
-  color: #f8fafc; /* Slate-50 Text */
+  background-color: #020617;
+  /* Deepest Dark Blue/Black */
+  color: #f8fafc;
+  /* Slate-50 Text */
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  overflow-x: hidden; /* Prevent horizontal scroll */
-  -webkit-font-smoothing: antialiased; /* Smoother fonts on Mac */
+  overflow-x: hidden;
+  /* Prevent horizontal scroll */
+  -webkit-font-smoothing: antialiased;
+  /* Smoother fonts on Mac */
 }
 
 /* --- 2. CUSTOM TECH SCROLLBAR --- */
@@ -21,17 +25,19 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #020617; 
+  background: #020617;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b; /* Slate-800 */
+  background: #1e293b;
+  /* Slate-800 */
   border-radius: 10px;
   transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #06b6d4; /* Cyan-500 Hover Effect */
+  background: #06b6d4;
+  /* Cyan-500 Hover Effect */
 }
 
 /* --- 3. UTILITY: HIDE SCROLLBAR --- */
@@ -41,13 +47,16 @@ body {
 }
 
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 /* --- 4. ANIMATION UTILITIES --- */
 /* Smooth text selection color */
 ::selection {
-  background-color: rgba(6, 182, 212, 0.3); /* Cyan tint */
+  background-color: rgba(6, 182, 212, 0.3);
+  /* Cyan tint */
   color: white;
 }

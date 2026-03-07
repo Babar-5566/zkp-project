@@ -93,5 +93,3 @@ function evaluatePredicate(rule, credential) {
       throw new Error("Unknown predicate type: " + rule.type);
   }
 }
-
-module.exports = { evaluatePredicate };

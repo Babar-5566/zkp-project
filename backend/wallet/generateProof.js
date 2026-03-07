@@ -1,11 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
 const { getLatestCredential } = require("./credentialStore");
 
-// --- New imports for ZK-SNARK ---
-const snarkjs = require("snarkjs");
-const path = require("path");
-// --------------------------------
-
 /* Placeholder for real BBS+ verification */
 async function verifyBbsSignature(credential) {
     // TODO: replace with real BBS+ verify call
@@ -119,89 +114,6 @@ async function generateProof(documentType, requestedAttributes) {
     };
 }
 
-
-// ==============================================================
-// 🚀 NEW: ZK-SNARK Age Verification Proof (Added dynamically)
-// ==============================================================
-async function generateZKAgeProof(documentType, requiredAgeThreshold = 18) {
-    console.log(`\n🔐 Wallet: Generating Zero-Knowledge Age Proof...`);
-    
-    // 1. Fetch user data from the credential
-    const cred = getLatestCredential(documentType);
-    if (!cred) {
-        throw new Error(`No credential of type ${documentType} stored in wallet`);
-    }
-    if (!cred.dob) {
-        throw new Error(`Date of Birth (dob) missing in ${documentType}`);
-    }
-
-    // 2. Calculate the actual age using your existing calculateAge function
-    const realAge = calculateAge(cred.dob);
-    console.log(`🤫 Secret Age calculated from DOB: ${realAge} (Will NOT be revealed)`);
-
-    // ==============================================================
-    // 🚀 NEW BLOCK ADDED HERE: Handling DD/MM/YYYY format safely
-    // If realAge is NaN, we manually calculate the exact age!
-    // ==============================================================
-    let safeAge = realAge;
-    if (isNaN(safeAge) && cred.dob) {
-        const parts = String(cred.dob).split('/');
-        if (parts.length === 3) {
-            const bDay = parseInt(parts[0], 10);
-            const bMonth = parseInt(parts[1], 10);
-            const bYear = parseInt(parts[2], 10);
-            const today = new Date();
-            
-            safeAge = today.getFullYear() - bYear;
-            if (today.getMonth() + 1 < bMonth || (today.getMonth() + 1 === bMonth && today.getDate() < bDay)) {
-                safeAge--;
-            }
-            console.log(`🛠️ Fixed NaN issue! Manually calculated Age: ${safeAge}`);
-        } else {
-            throw new Error("Invalid Date of Birth format. Expected DD/MM/YYYY.");
-        }
-    }
-    // ==============================================================
-
-    // 3. Prepare inputs for the ZK circuit
-    // 🚀 OLD CODE COMMENTED OUT TO PRESERVE HISTORY:
-    // const inputs = {
-    //     age: BigInt(realAge),
-    //     requiredAge: BigInt(requiredAgeThreshold)
-    // };
-    
-    // 🚀 NEW CODE ADDED:
-    const inputs = {
-        age: BigInt(safeAge), // Using safeAge so BigInt never gets NaN
-        requiredAge: BigInt(requiredAgeThreshold)
-    };
-
-    // 4. Paths to the Zero-Knowledge artifacts we generated earlier
-    const wasmPath = path.join(process.cwd(), 'zk-files', 'age_proof.wasm');
-    const zkeyPath = path.join(process.cwd(), 'zk-files', 'circuit_final.zkey');
-
-    try {
-        // 5. Generate the proof using the Groth16 algorithm
-        const { proof, publicSignals } = await snarkjs.groth16.fullProve(inputs, wasmPath, zkeyPath);
-        
-        console.log('✅ ZK AGE PROOF GENERATED SUCCESSFULLY!');
-        
-        return {
-            documentType,
-            proofType: "ZK-SNARK-Age-Proof",
-            proof: proof,
-            publicSignals: publicSignals,
-            nonce: uuidv4(),
-            issuer: cred.issuer
-        };
-    } catch (error) {
-        console.error("❌ ZK Proof Generation Failed:", error);
-        throw new Error("Failed to generate ZK proof");
-    }
-}
-
-// Export both functions
 module.exports = {
-    generateProof,
-    generateZKAgeProof
+    generateProof
 };

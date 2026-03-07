@@ -121,7 +121,7 @@ export const generateFakeProof = () => {
       nonce: randomHex(8)
     },
     zk_proof: {
-      protocol: "groth16",
+      protocol: "plonk",
       curve: "bn128",
       pi_a: [randomHex(8), randomHex(8)],
       pi_b: [[randomHex(8), randomHex(8)], [randomHex(8), randomHex(8)]],
