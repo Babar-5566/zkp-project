@@ -1,10 +1,18 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import { useTelemetry } from '../context/TelemetryContext';
 
 const VerificationResults = ({ requestId, onExpired }) => {
   const [results, setResults] = useState([]);
   const [failedResults, setFailedResults] = useState([]);
   const [status, setStatus] = useState("waiting");
   const [searchQuery, setSearchQuery] = useState("");
+  const telemetry = useTelemetry();
+  const prevVerifiedCountRef = useRef(0);
+
+  // Reset count when requestId changes
+  useEffect(() => {
+    prevVerifiedCountRef.current = 0;
+  }, [requestId]);
 
   // 🔄 Polling
   useEffect(() => {
@@ -19,14 +27,65 @@ const VerificationResults = ({ requestId, onExpired }) => {
         );
         const data = await res.json();
 
-        // console.log(`📡 [Poll] request-status for ${requestId}:`, data);
-
         // ✅ Verified users — newest first
         const users = data.verifiedUsers || [];
         const sorted = [...users].sort(
           (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
         );
         setResults(sorted);
+
+        // 🔥 Record telemetry for EACH new verified user (creates history entry)
+        if (users.length > prevVerifiedCountRef.current) {
+          // Process ALL new users since last check
+          const newCount = users.length - prevVerifiedCountRef.current;
+          const newUsers = sorted.slice(0, newCount);
+
+          for (const verifiedUser of newUsers.reverse()) {
+            console.log(`📊 [Telemetry] New verified user!`, verifiedUser);
+
+            const realVerifyTime = verifiedUser?.verifyTimeMs;
+            const realProverTime = verifiedUser?.proverTimeMs;
+            const realProofSize = verifiedUser?.proofSizeBytes;
+            const realE2e = verifiedUser?.e2eMs;
+            const realProofType = verifiedUser?.proofType;
+            const subjectId = verifiedUser?.subjectId || 'Unknown';
+            const truncatedId = subjectId.length > 10
+              ? `${subjectId.substring(0, 5)}...${subjectId.substring(subjectId.length - 5)}`
+              : subjectId;
+
+            try {
+              const [issuerRes, verifierRes] = await Promise.allSettled([
+                fetch("http://localhost:5000/metrics").then(r => r.json()),
+                fetch("http://localhost:3001/metrics").then(r => r.json())
+              ]);
+              const issuer = issuerRes?.status === 'fulfilled' ? issuerRes.value : {};
+              const verifier = verifierRes?.status === 'fulfilled' ? verifierRes.value : {};
+              const finalVerifyTime = realVerifyTime ?? verifier.lastVerifyTiming?.verifyTimeMs ?? null;
+
+              telemetry.setMetrics({
+                proverTime: realProverTime != null ? realProverTime + 'ms' : 'N/A',
+                verifierTime: finalVerifyTime != null ? finalVerifyTime + 'ms' : 'N/A',
+                proofSize: realProofSize != null ? (realProofSize / 1024).toFixed(1) + 'KB' : 'N/A',
+                latency: realE2e != null ? realE2e + 'ms' : 'N/A',
+                cpuUsage: Math.max(parseFloat(issuer.cpuPercent) || 0, parseFloat(verifier.cpuPercent) || 0, 2.0).toFixed(1),
+                ramUsage: ((parseFloat(issuer.memoryMB) || 0) + (parseFloat(verifier.memoryMB) || 0)).toFixed(1),
+                proofGeneratedBy: `Anonymous (${truncatedId})`,
+                proofType: realProofType || 'BBS+'
+              });
+            } catch (e) {
+              telemetry.setMetrics({
+                proverTime: realProverTime != null ? realProverTime + 'ms' : 'N/A',
+                verifierTime: realVerifyTime != null ? realVerifyTime + 'ms' : 'N/A',
+                proofSize: realProofSize != null ? (realProofSize / 1024).toFixed(1) + 'KB' : 'N/A',
+                latency: realE2e != null ? realE2e + 'ms' : 'N/A',
+                proofGeneratedBy: `Anonymous (${truncatedId})`,
+                proofType: realProofType || 'BBS+'
+              });
+            }
+          }
+
+          prevVerifiedCountRef.current = users.length;
+        }
 
         // ❌ Failed users — newest first
         const failed = data.failedUsers || [];
@@ -127,8 +186,8 @@ const VerificationResults = ({ requestId, onExpired }) => {
           <div
             key={`verified-${index}`}
             className={`p-3 rounded-xl mb-2 border ${isMatched
-                ? "bg-orange-900/40 border-orange-500"
-                : "bg-slate-900 border-slate-700"
+              ? "bg-orange-900/40 border-orange-500"
+              : "bg-slate-900 border-slate-700"
               }`}
           >
             <div className="flex items-center justify-between">
@@ -171,8 +230,8 @@ const VerificationResults = ({ requestId, onExpired }) => {
           <div
             key={`failed-${index}`}
             className={`p-3 rounded-xl mb-2 border ${isMatched
-                ? "bg-orange-900/40 border-orange-500"
-                : "bg-red-950/40 border-red-500/30"
+              ? "bg-orange-900/40 border-orange-500"
+              : "bg-red-950/40 border-red-500/30"
               }`}
           >
             <div className="flex items-center justify-between">

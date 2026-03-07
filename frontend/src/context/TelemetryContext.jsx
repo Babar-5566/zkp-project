@@ -23,7 +23,20 @@ export const TelemetryProvider = ({ children }) => {
         setHistory(prev => [entry, ...prev].slice(0, 20)); // keep last 20
     }, []);
 
+    const updateMetrics = useCallback((partialMetrics) => {
+        setMetrics(prev => {
+            const base = prev || {};
+            const updated = { ...base, ...partialMetrics, timestamp: new Date().toISOString() };
+            return updated;
+        });
+    }, []);
+
     const clearMetrics = useCallback(() => {
+        setMetrics(null);
+    }, []);
+
+    const clearHistory = useCallback(() => {
+        setHistory([]);
         setMetrics(null);
     }, []);
 
@@ -55,7 +68,7 @@ export const TelemetryProvider = ({ children }) => {
         <TelemetryContext.Provider value={{
             isOpen, setIsOpen, openTelemetry, closeTelemetry,
             isCollecting, setIsCollecting,
-            metrics, setMetrics: recordMetrics, clearMetrics,
+            metrics, setMetrics: recordMetrics, updateMetrics, clearMetrics, clearHistory,
             history,
             fetchServerMetrics
         }}>
