@@ -409,7 +409,7 @@ const Verifier = () => {
       }
 
       // Calculate proof size and timing
-      const proofSizeBytes = JSON.stringify(proof).length + (zkProof ? JSON.stringify(zkProof).length : 0)
+      const proofSizeBytes = JSON.stringify(proof).length + (Object.keys(zkProofs).length > 0 ? JSON.stringify(zkProofs).length : 0)
       const proverTimeMs = Math.round(bbsTime + zkSnarkTime)
       const e2eMs = Math.round(performance.now() - e2eStart)
 
@@ -695,7 +695,7 @@ const Verifier = () => {
       addLog("Proof generated successfully ✅", "success")
 
       // Calculate proof size
-      const proofSizeBytes = JSON.stringify(proof).length + (zkProofResult ? JSON.stringify(zkProofResult).length : 0)
+      const proofSizeBytes = JSON.stringify(proof).length + (Object.keys(zkProofsLocal).length > 0 ? JSON.stringify(zkProofsLocal).length : 0)
       const proofSizeKB = (proofSizeBytes / 1024).toFixed(1)
 
       const endToEndMs = performance.now() - e2eStart
