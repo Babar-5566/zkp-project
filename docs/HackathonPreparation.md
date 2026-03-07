@@ -176,7 +176,7 @@ This teammate will explain the **ZKP engine of the system**.
 
 ---
 
-# Protocol Security & Implementation - 
+# Protocol Security & Implementation - Nirupam Pal
 
 Assigned prompts:
 
