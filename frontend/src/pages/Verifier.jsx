@@ -14,8 +14,9 @@ import {
   generateRangeProof,
   generateYearProof,
   generateDateProof,
-  generateHashProof
-} from "../utils/grothProver";
+  generateSetMembershipProof,
+  generateStringMatchProof
+} from "../utils/plonkProver";
 import { useTelemetry } from '../context/TelemetryContext';
 import { getAllSchemaFields } from "../utils/schema";
 import { QRCodeCanvas } from "qrcode.react";
@@ -250,7 +251,7 @@ const Verifier = () => {
       let zkFailed = false
       const currentRequest = proofRequest.proofRequest ?? proofRequest
       const grothPredicates = (currentRequest.requested_predicates || []).filter(
-        p => ['numeric/range', 'equality', 'date comparison', 'hash'].includes(p.predicate)
+        p => ['numeric/range', 'equality', 'date comparison', 'set membership', 'string match'].includes(p.predicate)
       )
 
       for (const pred of grothPredicates) {
@@ -288,11 +289,16 @@ const Verifier = () => {
             addLog(`Generating zk-SNARK proof (date: ${pred.name})...`)
             zkProofs[`date_${pred.name}`] = await generateDateProof(fieldVal, pred.value)
             addLog(`Date proof for ${pred.name} generated ✅`, 'success')
-          } else if (pred.predicate === 'hash') {
-            addLog(`Generating zk-SNARK proof (hash: ${pred.name})...`)
-            zkProofs[`hash_${pred.name}`] = await generateHashProof(fieldVal, pred.value)
-            addLog(`Hash proof for ${pred.name} generated ✅`, 'success')
-          }
+          } else if (pred.predicate === 'set membership') {
+            addLog(`Generating PLONK proof (set membership: ${pred.name})...`)
+            const allowedValues = (pred.value || '').split(',').map(v => v.trim()).filter(Boolean)
+            zkProofs[`setmem_${pred.name}`] = await generateSetMembershipProof(pred.name, fieldVal, allowedValues)
+            addLog(`Set membership proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'string match') {
+            addLog(`Generating PLONK proof (string match: ${pred.name})...`)
+            zkProofs[`strmatch_${pred.name}`] = await generateStringMatchProof(fieldVal, pred.value)
+            addLog(`String match proof for ${pred.name} generated ✅`, 'success')
+          } 
         } catch (zkErr) {
           addLog(`zk-SNARK proof for ${pred.name}:${pred.predicate} failed ❌`, 'error')
           addLog(zkErr.message || 'Unknown zk-SNARK error')
@@ -508,7 +514,7 @@ const Verifier = () => {
       const zkProofsLocal = {}
       let zkFailedLocal = false
       const grothPredsLocal = (effectiveRequest.requested_predicates || []).filter(
-        p => ['numeric/range', 'equality', 'date comparison', 'hash'].includes(p.predicate)
+        p => ['numeric/range', 'equality', 'date comparison', 'set membership', 'string match'].includes(p.predicate)
       )
 
       for (const pred of grothPredsLocal) {
@@ -559,12 +565,19 @@ const Verifier = () => {
             zkProofsLocal[`date_${pred.name}`] = await generateDateProof(fieldVal, pred.value)
             zkSnarkTime += performance.now() - zkStart
             addLog(`Date proof for ${pred.name} generated ✅`, 'success')
-          } else if (pred.predicate === 'hash') {
-            addLog(`Generating zk-SNARK proof (hash: ${pred.name})...`)
+          } else if (pred.predicate === 'set membership') {
+            addLog(`Generating PLONK proof (set membership: ${pred.name})...`)
+            const allowedValues = (pred.value || '').split(',').map(v => v.trim()).filter(Boolean)
             const zkStart = performance.now()
-            zkProofsLocal[`hash_${pred.name}`] = await generateHashProof(fieldVal, pred.value)
+            zkProofsLocal[`setmem_${pred.name}`] = await generateSetMembershipProof(pred.name, fieldVal, allowedValues)
             zkSnarkTime += performance.now() - zkStart
-            addLog(`Hash proof for ${pred.name} generated ✅`, 'success')
+            addLog(`Set membership proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'string match') {
+            addLog(`Generating PLONK proof (string match: ${pred.name})...`)
+            const zkStart = performance.now()
+            zkProofsLocal[`strmatch_${pred.name}`] = await generateStringMatchProof(fieldVal, pred.value)
+            zkSnarkTime += performance.now() - zkStart
+            addLog(`String match proof for ${pred.name} generated ✅`, 'success')
           }
         } catch (zkE) {
           addLog(`zk-SNARK proof for ${pred.name}:${pred.predicate} failed ❌`, 'error')
@@ -1233,11 +1246,6 @@ const Verifier = () => {
                                         if (!/^\d*$/.test(value)) return
                                       }
 
-                                      // 🟠 Only apply hash rule if explicitly hash
-                                      if (info.inputType === "hash") {
-                                        value = value.replace(/[^0-9a-fA-F]/g, "")
-                                      }
-
                                       setPredicateInputs((prev) => ({
                                         ...prev,
                                         [selected]: value
@@ -1246,8 +1254,6 @@ const Verifier = () => {
                                     placeholder={
                                       info.inputType === "numeric"
                                         ? "Enter minimum age"
-                                        : info.inputType === "hash"
-                                          ? "Enter hex hash"
                                           : info.inputType === "date"
                                             ? "Select date"
                                             : "Enter value"
