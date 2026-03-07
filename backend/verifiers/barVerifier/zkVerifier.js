@@ -3,17 +3,17 @@ const fs = require("fs");
 const path = require("path");
 
 // ============================================
-// GENERIC GROTH16 VERIFICATION HELPER
+// GENERIC PLONK VERIFICATION HELPER
 // ============================================
 
 /**
- * Generic Groth16 proof verification.
+ * Generic PLONK proof verification.
  * @param {string} vkeyFileName - Name of the verification key file (e.g., "age_check_vkey.json")
  * @param {Object} proof - The cryptographic proof
  * @param {Array} publicSignals - The public signals
  * @returns {Promise<{valid: boolean, reason?: string}>}
  */
-async function verifyGroth16(vkeyFileName, proof, publicSignals) {
+async function verifyPlonk(vkeyFileName, proof, publicSignals) {
     const vKeyPath = path.resolve(__dirname, `../../zk-factory/build/${vkeyFileName}`);
 
     if (!fs.existsSync(vKeyPath)) {
@@ -23,7 +23,7 @@ async function verifyGroth16(vkeyFileName, proof, publicSignals) {
     const vKey = JSON.parse(fs.readFileSync(vKeyPath, "utf-8"));
 
     try {
-        const isValid = await snarkjs.groth16.verify(vKey, publicSignals, proof);
+        const isValid = await snarkjs.plonk.verify(vKey, publicSignals, proof);
 
         if (!isValid) {
             return { valid: false, reason: "Cryptographic proof verification failed" };
@@ -31,7 +31,7 @@ async function verifyGroth16(vkeyFileName, proof, publicSignals) {
 
         return { valid: true };
     } catch (error) {
-        console.error(`Groth16 verification failed (${vkeyFileName}):`, error);
+        console.error(`PLONK verification failed (${vkeyFileName}):`, error);
         return { valid: false, reason: error.message };
     }
 }
@@ -46,7 +46,7 @@ async function verifyAgeProof(proof, publicSignals, expectedThreshold) {
         ? "vk_01.json"
         : "age_check_vkey.json";
 
-    const result = await verifyGroth16(vkeyFile, proof, publicSignals);
+    const result = await verifyPlonk(vkeyFile, proof, publicSignals);
     if (!result.valid) return result;
 
     // publicSignals[0] = isEligible, publicSignals[1] = ageThreshold
@@ -72,7 +72,7 @@ async function verifyAgeProof(proof, publicSignals, expectedThreshold) {
 // ============================================
 
 async function verifyEqualityProof(proof, publicSignals, expectedValue) {
-    const result = await verifyGroth16("equality_check_vkey.json", proof, publicSignals);
+    const result = await verifyPlonk("equality_check_vkey.json", proof, publicSignals);
     if (!result.valid) return result;
 
     // publicSignals[0] = isEqual, publicSignals[1] = expected (public input)
@@ -88,7 +88,7 @@ async function verifyEqualityProof(proof, publicSignals, expectedValue) {
 // ============================================
 
 async function verifyRangeProof(proof, publicSignals, expectedThreshold) {
-    const result = await verifyGroth16("range_check_vkey.json", proof, publicSignals);
+    const result = await verifyPlonk("range_check_vkey.json", proof, publicSignals);
     if (!result.valid) return result;
 
     // publicSignals[0] = isValid, publicSignals[1] = threshold
@@ -114,7 +114,7 @@ async function verifyRangeProof(proof, publicSignals, expectedThreshold) {
 // ============================================
 
 async function verifyYearProof(proof, publicSignals, expectedThreshold) {
-    const result = await verifyGroth16("year_check_vkey.json", proof, publicSignals);
+    const result = await verifyPlonk("year_check_vkey.json", proof, publicSignals);
     if (!result.valid) return result;
 
     // publicSignals[0] = isValid, publicSignals[1] = yearThreshold
@@ -140,7 +140,7 @@ async function verifyYearProof(proof, publicSignals, expectedThreshold) {
 // ============================================
 
 async function verifyDateProof(proof, publicSignals, expectedThreshold) {
-    const result = await verifyGroth16("date_check_vkey.json", proof, publicSignals);
+    const result = await verifyPlonk("date_check_vkey.json", proof, publicSignals);
     if (!result.valid) return result;
 
     // publicSignals[0] = isValid, publicSignals[1] = dateThreshold
@@ -156,7 +156,7 @@ async function verifyDateProof(proof, publicSignals, expectedThreshold) {
 // ============================================
 
 async function verifyHashProof(proof, publicSignals) {
-    const result = await verifyGroth16("hash_check_vkey.json", proof, publicSignals);
+    const result = await verifyPlonk("hash_check_vkey.json", proof, publicSignals);
     if (!result.valid) return result;
 
     // publicSignals[0] = isValid, publicSignals[1] = expectedHash
@@ -168,12 +168,61 @@ async function verifyHashProof(proof, publicSignals) {
 }
 
 // ============================================
+// SET MEMBERSHIP — value ∈ allowed set
+// ============================================
+
+async function verifySetMembershipProof(proof, publicSignals) {
+    const result = await verifyPlonk("set_membership_vkey.json", proof, publicSignals);
+    if (!result.valid) return result;
+
+    // publicSignals[0] = isInSet, publicSignals[1..8] = set values
+    if (publicSignals[0] !== "1") {
+        return { valid: false, reason: `Set membership check failed: value not in allowed set` };
+    }
+
+    return { valid: true };
+}
+
+// ============================================
+// STRING MATCH — Poseidon(actual) == Poseidon(expected)
+// ============================================
+
+async function verifyStringMatchProof(proof, publicSignals) {
+    const result = await verifyPlonk("string_match_vkey.json", proof, publicSignals);
+    if (!result.valid) return result;
+
+    // publicSignals[0] = isMatch, publicSignals[1] = expected
+    if (publicSignals[0] !== "1") {
+        return { valid: false, reason: `String match failed: values do not match` };
+    }
+
+    return { valid: true };
+}
+
+// ============================================
+// CROSS-FIELD — valueA + valueB >= threshold
+// ============================================
+
+async function verifyCrossFieldProof(proof, publicSignals) {
+    const result = await verifyPlonk("cross_field_vkey.json", proof, publicSignals);
+    if (!result.valid) return result;
+
+    // publicSignals[0] = isValid, publicSignals[1] = threshold
+    if (publicSignals[0] !== "1") {
+        return { valid: false, reason: `Cross-field check failed: sum below threshold` };
+    }
+
+    return { valid: true };
+}
+
+// ============================================
 // VERIFY ALL ZK PROOFS (dispatcher)
 // ============================================
 
 /**
  * Verify all zkProofs in the map.
- * Keys follow the pattern: ageProof, yearProof, rangeProof, eq_{field}, date_{field}, hash_{field}
+ * Keys follow the pattern: ageProof, yearProof, rangeProof, eq_{field}, date_{field}, hash_{field},
+ *                          setmem_{field}, strmatch_{field}, crossfield
  * @param {Object} zkProofs - Map of proof name → { proof, publicSignals }
  * @returns {Promise<{valid: boolean, reason?: string}>}
  */
@@ -195,6 +244,12 @@ async function verifyAllZkProofs(zkProofs) {
             result = await verifyDateProof(zkProof.proof, zkProof.publicSignals);
         } else if (key.startsWith("hash_")) {
             result = await verifyHashProof(zkProof.proof, zkProof.publicSignals);
+        } else if (key.startsWith("setmem_")) {
+            result = await verifySetMembershipProof(zkProof.proof, zkProof.publicSignals);
+        } else if (key.startsWith("strmatch_")) {
+            result = await verifyStringMatchProof(zkProof.proof, zkProof.publicSignals);
+        } else if (key === "crossfield" || key.startsWith("crossfield_")) {
+            result = await verifyCrossFieldProof(zkProof.proof, zkProof.publicSignals);
         } else {
             console.warn(`Unknown zk proof type: ${key}, skipping`);
             continue;
@@ -204,7 +259,7 @@ async function verifyAllZkProofs(zkProofs) {
             return { valid: false, reason: `${key}: ${result.reason}` };
         }
 
-        console.log(`✅ zk-SNARK proof verified: ${key}`);
+        console.log(`✅ PLONK proof verified: ${key}`);
     }
 
     return { valid: true };
@@ -217,6 +272,9 @@ module.exports = {
     verifyYearProof,
     verifyDateProof,
     verifyHashProof,
+    verifySetMembershipProof,
+    verifyStringMatchProof,
+    verifyCrossFieldProof,
     verifyAllZkProofs
 };
 

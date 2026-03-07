@@ -1,13 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 
 const VerificationResults = ({ requestId, onExpired }) => {
   const [results, setResults] = useState([]);
   const [failedResults, setFailedResults] = useState([]);
   const [status, setStatus] = useState("waiting");
-
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortedResults, setSortedResults] = useState([]);
-  const [sortedFailed, setSortedFailed] = useState([]);
 
   // 🔄 Polling
   useEffect(() => {
@@ -21,6 +18,8 @@ const VerificationResults = ({ requestId, onExpired }) => {
           `http://localhost:3001/request-status?id=${requestId}`
         );
         const data = await res.json();
+
+        // console.log(`📡 [Poll] request-status for ${requestId}:`, data);
 
         // ✅ Verified users — newest first
         const users = data.verifiedUsers || [];
@@ -53,27 +52,22 @@ const VerificationResults = ({ requestId, onExpired }) => {
     return () => clearInterval(interval);
   }, [requestId, onExpired]);
 
-  // ✅ SEARCH LOGIC
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSortedResults(results);
-      setSortedFailed(failedResults);
-      return;
-    }
-
+  // ✅ Derived filtered results (no extra state/effect timing issues)
+  const displayedResults = useMemo(() => {
+    if (!searchQuery.trim()) return results;
     const q = searchQuery.toLowerCase();
-
-    const matchedVerified = results.filter((user) =>
+    return results.filter((user) =>
       user.subjectId.toLowerCase().includes(q)
     );
-    setSortedResults([...matchedVerified, ...results]);
+  }, [searchQuery, results]);
 
-    const matchedFailed = failedResults.filter((user) =>
+  const displayedFailed = useMemo(() => {
+    if (!searchQuery.trim()) return failedResults;
+    const q = searchQuery.toLowerCase();
+    return failedResults.filter((user) =>
       user.subjectId.toLowerCase().includes(q)
     );
-    setSortedFailed([...matchedFailed, ...failedResults]);
-
-  }, [searchQuery, results, failedResults]);
+  }, [searchQuery, failedResults]);
 
   if (!requestId) {
     return (
@@ -117,14 +111,14 @@ const VerificationResults = ({ requestId, onExpired }) => {
         />
       </div>
 
-      {status === "waiting" && results.length === 0 && failedResults.length === 0 && (
+      {status !== "expired" && results.length === 0 && failedResults.length === 0 && (
         <p className="text-slate-400 text-sm mb-4">
           Waiting for users to verify...
         </p>
       )}
 
       {/* ✅ VERIFIED USERS */}
-      {sortedResults.map((user, index) => {
+      {displayedResults.map((user, index) => {
         const isMatched =
           searchQuery &&
           user.subjectId.toLowerCase().includes(searchQuery.toLowerCase());
@@ -168,7 +162,7 @@ const VerificationResults = ({ requestId, onExpired }) => {
       })}
 
       {/* ❌ FAILED USERS */}
-      {sortedFailed.map((user, index) => {
+      {displayedFailed.map((user, index) => {
         const isMatched =
           searchQuery &&
           user.subjectId.toLowerCase().includes(searchQuery.toLowerCase());

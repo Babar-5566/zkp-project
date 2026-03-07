@@ -14,8 +14,12 @@ import {
   generateRangeProof,
   generateYearProof,
   generateDateProof,
-  generateHashProof
-} from "../utils/grothProver";
+  generateHashProof,
+  generateSetMembershipProof,
+  generateStringMatchProof,
+  generateCrossFieldProof,
+  extractLocation
+} from "../utils/plonkProver";
 import { useTelemetry } from '../context/TelemetryContext';
 import { getAllSchemaFields } from "../utils/schema";
 import { QRCodeCanvas } from "qrcode.react";
@@ -245,12 +249,12 @@ const Verifier = () => {
         request: proofRequest.proofRequest ?? proofRequest
       })
 
-      // 🔐 Generate zk-SNARK proofs for ALL Groth16 predicates
+      // 🔐 Generate zk-SNARK proofs for ALL PLONK predicates
       const zkProofs = {}
       let zkFailed = false
       const currentRequest = proofRequest.proofRequest ?? proofRequest
       const grothPredicates = (currentRequest.requested_predicates || []).filter(
-        p => ['numeric/range', 'equality', 'date comparison', 'hash'].includes(p.predicate)
+        p => ['numeric/range', 'equality', 'date comparison', 'hash', 'set membership', 'string match', 'cross-field', 'extract location'].includes(p.predicate)
       )
 
       for (const pred of grothPredicates) {
@@ -259,39 +263,57 @@ const Verifier = () => {
           const fieldVal = vc?.credentialSubject?.[pred.name]
 
           if (pred.predicate === 'numeric/range' && pred.name === 'dob') {
-            addLog(`Generating zk-SNARK proof (age check)...`)
+            addLog(`Generating PLONK proof (age check)...`)
             const threshold = Math.abs(parseInt(pred.value || '18'))
             if (fieldVal) {
               zkProofs.ageProof = await generateZkSnarkProof(fieldVal, threshold)
               addLog('Age proof generated ✅', 'success')
             }
           } else if (pred.predicate === 'numeric/range' && pred.name === 'passingYear') {
-            addLog(`Generating zk-SNARK proof (year check)...`)
+            addLog(`Generating PLONK proof (year check)...`)
             zkProofs.yearProof = await generateYearProof(fieldVal, pred.value)
             addLog('Year proof generated ✅', 'success')
           } else if (pred.predicate === 'numeric/range' && pred.name === 'marks') {
-            addLog(`Generating zk-SNARK proof (marks range check)...`)
+            addLog(`Generating PLONK proof (marks range check)...`)
             zkProofs.rangeProof = await generateRangeProof(fieldVal, pred.value)
             addLog('Range proof generated ✅', 'success')
           } else if (pred.predicate === 'numeric/range') {
-            addLog(`Generating zk-SNARK proof (age check for ${pred.name})...`)
+            addLog(`Generating PLONK proof (age check for ${pred.name})...`)
             const threshold = Math.abs(parseInt(pred.value || '18'))
             if (fieldVal) {
               zkProofs[`age_${pred.name}`] = await generateZkSnarkProof(fieldVal, threshold)
               addLog(`Age proof for ${pred.name} generated ✅`, 'success')
             }
           } else if (pred.predicate === 'equality') {
-            addLog(`Generating zk-SNARK proof (equality: ${pred.name})...`)
+            addLog(`Generating PLONK proof (equality: ${pred.name})...`)
             zkProofs[`eq_${pred.name}`] = await generateEqualityProof(pred.name, fieldVal, pred.value)
             addLog(`Equality proof for ${pred.name} generated ✅`, 'success')
           } else if (pred.predicate === 'date comparison') {
-            addLog(`Generating zk-SNARK proof (date: ${pred.name})...`)
+            addLog(`Generating PLONK proof (date: ${pred.name})...`)
             zkProofs[`date_${pred.name}`] = await generateDateProof(fieldVal, pred.value)
             addLog(`Date proof for ${pred.name} generated ✅`, 'success')
           } else if (pred.predicate === 'hash') {
-            addLog(`Generating zk-SNARK proof (hash: ${pred.name})...`)
+            addLog(`Generating PLONK proof (hash: ${pred.name})...`)
             zkProofs[`hash_${pred.name}`] = await generateHashProof(fieldVal, pred.value)
             addLog(`Hash proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'set membership') {
+            addLog(`Generating PLONK proof (set membership: ${pred.name})...`)
+            const allowedValues = (pred.value || '').split(',').map(v => v.trim()).filter(Boolean)
+            zkProofs[`setmem_${pred.name}`] = await generateSetMembershipProof(pred.name, fieldVal, allowedValues)
+            addLog(`Set membership proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'string match') {
+            addLog(`Generating PLONK proof (string match: ${pred.name})...`)
+            zkProofs[`strmatch_${pred.name}`] = await generateStringMatchProof(fieldVal, pred.value)
+            addLog(`String match proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'cross-field') {
+            addLog(`Generating PLONK proof (cross-field: ${pred.name})...`)
+            const marksVal = vc?.credentialSubject?.marks
+            const yearVal = vc?.credentialSubject?.passingYear
+            zkProofs[`crossfield_${pred.name}`] = await generateCrossFieldProof(marksVal, yearVal, pred.value)
+            addLog(`Cross-field proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'extract location') {
+            const location = extractLocation(fieldVal)
+            addLog(`📍 Extracted location: city=${location.city}, state=${location.state}`, 'success')
           }
         } catch (zkErr) {
           addLog(`zk-SNARK proof for ${pred.name}:${pred.predicate} failed ❌`, 'error')
@@ -504,11 +526,11 @@ const Verifier = () => {
       })
       const bbsTime = performance.now() - bbsStart
 
-      // 🔐 Generate zk-SNARK proofs for ALL Groth16 predicates
+      // 🔐 Generate zk-SNARK proofs for ALL PLONK predicates
       const zkProofsLocal = {}
       let zkFailedLocal = false
       const grothPredsLocal = (effectiveRequest.requested_predicates || []).filter(
-        p => ['numeric/range', 'equality', 'date comparison', 'hash'].includes(p.predicate)
+        p => ['numeric/range', 'equality', 'date comparison', 'hash', 'set membership', 'string match', 'cross-field', 'extract location'].includes(p.predicate)
       )
 
       for (const pred of grothPredsLocal) {
@@ -560,11 +582,35 @@ const Verifier = () => {
             zkSnarkTime += performance.now() - zkStart
             addLog(`Date proof for ${pred.name} generated ✅`, 'success')
           } else if (pred.predicate === 'hash') {
-            addLog(`Generating zk-SNARK proof (hash: ${pred.name})...`)
+            addLog(`Generating PLONK proof (hash: ${pred.name})...`)
             const zkStart = performance.now()
             zkProofsLocal[`hash_${pred.name}`] = await generateHashProof(fieldVal, pred.value)
             zkSnarkTime += performance.now() - zkStart
             addLog(`Hash proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'set membership') {
+            addLog(`Generating PLONK proof (set membership: ${pred.name})...`)
+            const allowedValues = (pred.value || '').split(',').map(v => v.trim()).filter(Boolean)
+            const zkStart = performance.now()
+            zkProofsLocal[`setmem_${pred.name}`] = await generateSetMembershipProof(pred.name, fieldVal, allowedValues)
+            zkSnarkTime += performance.now() - zkStart
+            addLog(`Set membership proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'string match') {
+            addLog(`Generating PLONK proof (string match: ${pred.name})...`)
+            const zkStart = performance.now()
+            zkProofsLocal[`strmatch_${pred.name}`] = await generateStringMatchProof(fieldVal, pred.value)
+            zkSnarkTime += performance.now() - zkStart
+            addLog(`String match proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'cross-field') {
+            addLog(`Generating PLONK proof (cross-field: ${pred.name})...`)
+            const marksVal = vc?.credentialSubject?.marks || effectiveMapping[pred.name]?.credentialSubject?.marks
+            const yearVal = vc?.credentialSubject?.passingYear || effectiveMapping[pred.name]?.credentialSubject?.passingYear
+            const zkStart = performance.now()
+            zkProofsLocal[`crossfield_${pred.name}`] = await generateCrossFieldProof(marksVal, yearVal, pred.value)
+            zkSnarkTime += performance.now() - zkStart
+            addLog(`Cross-field proof for ${pred.name} generated ✅`, 'success')
+          } else if (pred.predicate === 'extract location') {
+            const location = extractLocation(fieldVal)
+            addLog(`📍 Extracted location: city=${location.city}, state=${location.state}`, 'success')
           }
         } catch (zkE) {
           addLog(`zk-SNARK proof for ${pred.name}:${pred.predicate} failed ❌`, 'error')
@@ -651,7 +697,7 @@ const Verifier = () => {
         cpuUsage: serverCpu.toFixed(1),
         ramUsage: serverRam.toFixed(1),
         proofGeneratedBy: vc?.type?.find(t => t !== 'VerifiableCredential')?.replace('Credential', '')?.replace(/([A-Z])/g, ' $1')?.trim() || 'Unknown Card',
-        proofType: Object.keys(zkProofsLocal).length > 0 ? `BBS+ + zk-SNARK (Groth16 × ${Object.keys(zkProofsLocal).length})` : 'BBS+ Only'
+        proofType: Object.keys(zkProofsLocal).length > 0 ? `BBS+ + zk-SNARK (PLONK × ${Object.keys(zkProofsLocal).length})` : 'BBS+ Only'
       })
 
       setProofData(proof)

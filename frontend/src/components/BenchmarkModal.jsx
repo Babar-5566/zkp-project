@@ -173,7 +173,7 @@ const BenchmarkModal = () => {
                       {isCollecting && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />}
                     </h3>
                     <p className="text-[8px] sm:text-[9px] md:text-[10px] text-slate-500 font-mono font-medium tracking-[0.2em] uppercase mt-0.5">
-                      Core Engine v2.1 • BLS12-381 • Groth16
+                      Core Engine v2.1 • BLS12-381 • PLONK
                     </p>
                   </div>
                 </div>

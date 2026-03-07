@@ -334,8 +334,12 @@ app.get("/request-status", (req, res) => {
   const request = requests[id];
 
   if (!request) {
+    // console.log(`📡 [request-status] ID=${id?.substring(0,8)}... → NOT FOUND (returning unknown)`);
     return res.json({ status: "unknown", verifiedUsers: [] });
   }
+
+  // console.log(`📡 [request-status] ID=${id?.substring(0,8)}... → status=${request.status}, verified=${(request.verifiedUsers || []).length}, failed=${(request.failedUsers || []).length}`);
+
   res.json({
     status: request.status || "pending",
     verifiedUsers: request.verifiedUsers || [],
