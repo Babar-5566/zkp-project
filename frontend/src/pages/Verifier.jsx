@@ -14,11 +14,16 @@ import {
   generateRangeProof,
   generateYearProof,
   generateDateProof,
+<<<<<<< HEAD
   generateHashProof,
   generateSetMembershipProof,
   generateStringMatchProof,
   generateCrossFieldProof,
   extractLocation
+=======
+  generateSetMembershipProof,
+  generateStringMatchProof
+>>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
 } from "../utils/plonkProver";
 import { useTelemetry } from '../context/TelemetryContext';
 import { getAllSchemaFields } from "../utils/schema";
@@ -103,6 +108,7 @@ const Verifier = () => {
     setDisclosedFields([]);
     setLogs([]);
     setStatus("idle");
+    telemetry.clearHistory();
   };
 
   const resetForNewVerify = () => {
@@ -110,6 +116,7 @@ const Verifier = () => {
     setStatus("idle");
     setLogs([]);
     setProofData(null);
+    telemetry.clearHistory();
   };
 
   useEffect(() => {
@@ -186,6 +193,7 @@ const Verifier = () => {
 
   const handleVerifyProofClick = () => {
     setStep(4)
+    telemetry.clearHistory()
   };
 
   const isVerifyValid = verifierSelections.every((selection) => {
@@ -243,19 +251,28 @@ const Verifier = () => {
       const addLog = (msg, type) =>
         setLogs(prev => [...prev, { msg, type }])
 
+      const e2eStart = performance.now()
+      let zkSnarkTime = 0
+
       addLog("Preparing proof request...")
 
+      const bbsStart = performance.now()
       const proof = await generateBbsProof({
         mapping: selectedMapping,
         request: proofRequest.proofRequest ?? proofRequest
       })
+      const bbsTime = performance.now() - bbsStart
 
       // 🔐 Generate zk-SNARK proofs for ALL PLONK predicates
       const zkProofs = {}
       let zkFailed = false
       const currentRequest = proofRequest.proofRequest ?? proofRequest
       const grothPredicates = (currentRequest.requested_predicates || []).filter(
+<<<<<<< HEAD
         p => ['numeric/range', 'equality', 'date comparison', 'hash', 'set membership', 'string match', 'cross-field', 'extract location'].includes(p.predicate)
+=======
+        p => ['numeric/range', 'equality', 'date comparison', 'set membership', 'string match'].includes(p.predicate)
+>>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
       )
 
       for (const pred of grothPredicates) {
@@ -293,10 +310,13 @@ const Verifier = () => {
             addLog(`Generating PLONK proof (date: ${pred.name})...`)
             zkProofs[`date_${pred.name}`] = await generateDateProof(fieldVal, pred.value)
             addLog(`Date proof for ${pred.name} generated ✅`, 'success')
+<<<<<<< HEAD
           } else if (pred.predicate === 'hash') {
             addLog(`Generating PLONK proof (hash: ${pred.name})...`)
             zkProofs[`hash_${pred.name}`] = await generateHashProof(fieldVal, pred.value)
             addLog(`Hash proof for ${pred.name} generated ✅`, 'success')
+=======
+>>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
           } else if (pred.predicate === 'set membership') {
             addLog(`Generating PLONK proof (set membership: ${pred.name})...`)
             const allowedValues = (pred.value || '').split(',').map(v => v.trim()).filter(Boolean)
@@ -306,6 +326,7 @@ const Verifier = () => {
             addLog(`Generating PLONK proof (string match: ${pred.name})...`)
             zkProofs[`strmatch_${pred.name}`] = await generateStringMatchProof(fieldVal, pred.value)
             addLog(`String match proof for ${pred.name} generated ✅`, 'success')
+<<<<<<< HEAD
           } else if (pred.predicate === 'cross-field') {
             addLog(`Generating PLONK proof (cross-field: ${pred.name})...`)
             const marksVal = vc?.credentialSubject?.marks
@@ -316,6 +337,9 @@ const Verifier = () => {
             const location = extractLocation(fieldVal)
             addLog(`📍 Extracted location: city=${location.city}, state=${location.state}`, 'success')
           }
+=======
+          } 
+>>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
         } catch (zkErr) {
           addLog(`zk-SNARK proof for ${pred.name}:${pred.predicate} failed ❌`, 'error')
           addLog(zkErr.message || 'Unknown zk-SNARK error')
@@ -391,13 +415,32 @@ const Verifier = () => {
         "nullifier:" + nullifier
       );
 
+      // Calculate proof type display correct string
+      const numAttributes = (currentRequest.requested_attributes || []).length
+      const numZk = Object.keys(zkProofs).length
+      let proofTypeStr = 'BBS+ Only'
+      if (numAttributes > 0 && numZk > 0) {
+        proofTypeStr = `BBS+ + zk-SNARK (PLONK × ${numZk})`
+      } else if (numZk > 0) {
+        proofTypeStr = `zk-SNARK (PLONK × ${numZk})`
+      }
+
+      // Calculate proof size and timing
+      const proofSizeBytes = JSON.stringify(proof).length + (Object.keys(zkProofs).length > 0 ? JSON.stringify(zkProofs).length : 0)
+      const proverTimeMs = Math.round(bbsTime + zkSnarkTime)
+      const e2eMs = Math.round(performance.now() - e2eStart)
+
       // send proof to verifier backend
       const verifyPayload = {
         id: proofRequest.id,
         nonce: proofRequest.nonce,
         proofs: proof,
         nullifier,
-        revocationIndex: selectedMapping[Object.keys(selectedMapping)[0]]?.credentialStatus?.index ?? null
+        revocationIndex: selectedMapping[Object.keys(selectedMapping)[0]]?.credentialStatus?.index ?? null,
+        proverTimeMs,
+        proofSizeBytes,
+        e2eMs,
+        proofType: proofTypeStr
       }
       if (Object.keys(zkProofs).length > 0) {
         verifyPayload.zkProof = zkProof  // backward compat for age
@@ -531,7 +574,11 @@ const Verifier = () => {
       const zkProofsLocal = {}
       let zkFailedLocal = false
       const grothPredsLocal = (effectiveRequest.requested_predicates || []).filter(
+<<<<<<< HEAD
         p => ['numeric/range', 'equality', 'date comparison', 'hash', 'set membership', 'string match', 'cross-field', 'extract location'].includes(p.predicate)
+=======
+        p => ['numeric/range', 'equality', 'date comparison', 'set membership', 'string match'].includes(p.predicate)
+>>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
       )
 
       for (const pred of grothPredsLocal) {
@@ -582,11 +629,18 @@ const Verifier = () => {
             zkProofsLocal[`date_${pred.name}`] = await generateDateProof(fieldVal, pred.value)
             zkSnarkTime += performance.now() - zkStart
             addLog(`Date proof for ${pred.name} generated ✅`, 'success')
+<<<<<<< HEAD
           } else if (pred.predicate === 'hash') {
             addLog(`Generating PLONK proof (hash: ${pred.name})...`)
+=======
+          } else if (pred.predicate === 'set membership') {
+            addLog(`Generating PLONK proof (set membership: ${pred.name})...`)
+            const allowedValues = (pred.value || '').split(',').map(v => v.trim()).filter(Boolean)
+>>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
             const zkStart = performance.now()
-            zkProofsLocal[`hash_${pred.name}`] = await generateHashProof(fieldVal, pred.value)
+            zkProofsLocal[`setmem_${pred.name}`] = await generateSetMembershipProof(pred.name, fieldVal, allowedValues)
             zkSnarkTime += performance.now() - zkStart
+<<<<<<< HEAD
             addLog(`Hash proof for ${pred.name} generated ✅`, 'success')
           } else if (pred.predicate === 'set membership') {
             addLog(`Generating PLONK proof (set membership: ${pred.name})...`)
@@ -594,6 +648,8 @@ const Verifier = () => {
             const zkStart = performance.now()
             zkProofsLocal[`setmem_${pred.name}`] = await generateSetMembershipProof(pred.name, fieldVal, allowedValues)
             zkSnarkTime += performance.now() - zkStart
+=======
+>>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
             addLog(`Set membership proof for ${pred.name} generated ✅`, 'success')
           } else if (pred.predicate === 'string match') {
             addLog(`Generating PLONK proof (string match: ${pred.name})...`)
@@ -601,6 +657,7 @@ const Verifier = () => {
             zkProofsLocal[`strmatch_${pred.name}`] = await generateStringMatchProof(fieldVal, pred.value)
             zkSnarkTime += performance.now() - zkStart
             addLog(`String match proof for ${pred.name} generated ✅`, 'success')
+<<<<<<< HEAD
           } else if (pred.predicate === 'cross-field') {
             addLog(`Generating PLONK proof (cross-field: ${pred.name})...`)
             const marksVal = vc?.credentialSubject?.marks || effectiveMapping[pred.name]?.credentialSubject?.marks
@@ -612,6 +669,8 @@ const Verifier = () => {
           } else if (pred.predicate === 'extract location') {
             const location = extractLocation(fieldVal)
             addLog(`📍 Extracted location: city=${location.city}, state=${location.state}`, 'success')
+=======
+>>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
           }
         } catch (zkE) {
           addLog(`zk-SNARK proof for ${pred.name}:${pred.predicate} failed ❌`, 'error')
@@ -668,12 +727,19 @@ const Verifier = () => {
 
     addLog("Proof generated successfully ✅", "success")
 
+<<<<<<< HEAD
     // Calculate proof size
     const proofSizeBytes = JSON.stringify(proof).length + (zkProofResult ? JSON.stringify(zkProofResult).length : 0)
     const proofSizeKB = (proofSizeBytes / 1024).toFixed(1)
+=======
+      // Calculate proof size
+      const proofSizeBytes = JSON.stringify(proof).length + (Object.keys(zkProofsLocal).length > 0 ? JSON.stringify(zkProofsLocal).length : 0)
+      const proofSizeKB = (proofSizeBytes / 1024).toFixed(1)
+>>>>>>> 4c2a3c5f9470bac4758d2bcca975ccf699f13eb3
 
     const endToEndMs = performance.now() - e2eStart
 
+<<<<<<< HEAD
     // Collect the server metrics that were fetched concurrently
     let serverCpu = 2.5, serverRam = 45, verifierTimeMs = 0
     try {
@@ -700,6 +766,43 @@ const Verifier = () => {
       proofGeneratedBy: vc?.type?.find(t => t !== 'VerifiableCredential')?.replace('Credential', '')?.replace(/([A-Z])/g, ' $1')?.trim() || 'Unknown Card',
       proofType: Object.keys(zkProofsLocal).length > 0 ? `BBS+ + zk-SNARK (PLONK × ${Object.keys(zkProofsLocal).length})` : 'BBS+ Only'
     })
+=======
+      // Calculate accurate proof type string
+      const numAttributesLocal = (effectiveRequest.requested_attributes || []).length
+      const numZkLocal = Object.keys(zkProofsLocal).length
+      let proofTypeStrLocal = 'BBS+ Only'
+      if (numAttributesLocal > 0 && numZkLocal > 0) {
+        proofTypeStrLocal = `BBS+ + zk-SNARK (PLONK × ${numZkLocal})`
+      } else if (numZkLocal > 0) {
+        proofTypeStrLocal = `zk-SNARK (PLONK × ${numZkLocal})`
+      }
+
+      // Collect the server metrics that were fetched concurrently
+      let serverCpu = 2.5, serverRam = 45
+      try {
+        const results = await metricsPromise
+        const issuer = results[0]?.status === 'fulfilled' ? results[0].value : {}
+        const verifier = results[1]?.status === 'fulfilled' ? results[1].value : {}
+        const cpuI = parseFloat(issuer.cpuPercent) || 0
+        const cpuV = parseFloat(verifier.cpuPercent) || 0
+        const ramI = parseFloat(issuer.memoryMB) || 0
+        const ramV = parseFloat(verifier.memoryMB) || 0
+        serverCpu = Math.max(cpuI, cpuV, 2.0) // min 2% when active
+        serverRam = ramI + ramV
+      } catch (e) { /* fallback values used */ }
+
+      // Record real-time telemetry
+      telemetry.setMetrics({
+        proverTime: Math.round(bbsTime + zkSnarkTime) + 'ms',
+        verifierTime: 'Awaiting Scan...',
+        proofSize: proofSizeKB + 'KB',
+        latency: Math.round(endToEndMs) + 'ms',
+        cpuUsage: serverCpu.toFixed(1),
+        ramUsage: serverRam.toFixed(1),
+        proofGeneratedBy: vc?.type?.find(t => t !== 'VerifiableCredential')?.replace('Credential', '')?.replace(/([A-Z])/g, ' $1')?.trim() || 'Unknown Card',
+        proofType: proofTypeStrLocal
+      })
+>>>>>>> 4c2a3c5f9470bac4758d2bcca975ccf699f13eb3
 
     setProofData(proof)
     setStatus('success')
@@ -1186,7 +1289,11 @@ const Verifier = () => {
                 </div>
               </div>
               <button
+<<<<<<< HEAD
                 onClick={() => setQrLink(null)}
+=======
+                onClick={() => { setQrLink(null); telemetry.clearHistory(); }}
+>>>>>>> 4c2a3c5f9470bac4758d2bcca975ccf699f13eb3
                 className="mt-10 mb-10 px-6 py-3 bg-slate-800/50 border border-slate-700 hover:border-orange-500 rounded-xl font-bold text-slate-300 hover:text-orange-400 text-[10px] uppercase tracking-[2px] transition-all flex items-center gap-2 group"
               >
                 <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
@@ -1292,10 +1399,99 @@ const Verifier = () => {
                               )
                             )}
                           </div>
+<<<<<<< HEAD
                         );
                       })}
                     </motion.div>
                   ))}
+=======
+                        </div>
+
+                        {/* Predicates */}
+                        <div className="flex flex-wrap gap-2">
+                          {field.predicates?.map((pred) => (
+                            <button
+                              key={pred}
+                              onClick={() =>
+                                setVerifierSelections((prev) =>
+                                  prev.includes(`${field.name}:${pred}`)
+                                    ? prev.filter((x) => x !== `${field.name}:${pred}`)
+                                    : [...prev, `${field.name}:${pred}`]
+                                )
+                              }
+                              className={`px-2 py-1 text-[9px] font-bold rounded-md border transition-all ${verifierSelections.includes(`${field.name}:${pred}`)
+                                ? "bg-orange-500/20 border-orange-500 text-orange-400"
+                                : "bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700"
+                                }`}
+                            >
+                              {pred}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* INFO PANEL — SAME BEHAVIOR */}
+                        {verifierSelections
+                          .filter((x) => x.startsWith(`${field.name}:`))
+                          .map((selected) => {
+                            const pred = selected.split(':')[1]
+                            const info = predicateInfo[pred] || {}
+
+                            return (
+                              <div
+                                key={selected}
+                                className="mt-2 transition-all duration-300 ease-in-out"
+                              >
+                                <span className="inline-block bg-slate-700 text-orange-400 text-[8px] px-2 py-0.5 rounded uppercase mb-1">
+                                  {pred}
+                                </span>
+
+                                <p className="text-[9px] text-slate-400 italic">
+                                  {info.message}
+                                </p>
+
+                                {info.requiresInput && (
+                                  <input
+                                    type={
+                                      info.inputType === "date"
+                                        ? "date"
+                                        : info.inputType === "numeric"
+                                          ? "number"
+                                          : "text"
+                                    }
+                                    min={undefined}
+                                    value={predicateInputs[selected] || ""}
+                                    onChange={(e) => {
+                                      let value = e.target.value
+
+                                      // 🟠 Only apply numeric rule if explicitly numeric
+                                      if (info.inputType === "numeric") {
+                                        if (!/^\d*$/.test(value)) return
+                                      }
+
+                                      setPredicateInputs((prev) => ({
+                                        ...prev,
+                                        [selected]: value
+                                      }))
+                                    }}
+                                    placeholder={
+                                      info.inputType === "numeric"
+                                        ? "Enter minimum age"
+                                          : info.inputType === "date"
+                                            ? "Select date"
+                                            : "Enter value"
+                                    }
+                                    className="mt-1 w-full bg-slate-800 text-white rounded px-2 py-1 text-[10px]"
+                                  />
+                                )}
+                              </div>
+                            )
+                          })}
+
+                      </motion.div>
+                    )
+                  })}
+
+>>>>>>> 4c2a3c5f9470bac4758d2bcca975ccf699f13eb3
                 </div>
                 <button
                   onClick={startVerification}

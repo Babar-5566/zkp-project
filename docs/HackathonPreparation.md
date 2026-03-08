@@ -134,7 +134,7 @@ This teammate will explain the **big picture of the system**.
 
 ---
 
-# Credentials & Revocation - 
+# Credentials & Revocation - Kaustabha Chowdhury
 
 Assigned prompts:
 
@@ -155,7 +155,7 @@ This teammate will explain the **credential system**.
 
 ---
 
-# ZKP Proof System - 
+# ZKP Proof System - Sk Babar Ali
 
 Assigned prompts:
 
