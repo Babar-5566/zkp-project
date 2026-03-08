@@ -1,0 +1,27 @@
+{
+  "version": "1.0",
+  "id": "a0624eb45b631437835fd76c569111ed",
+  "type": "BbsProofRequest",
+  "credential_type": "identity_credential",
+  "issuer_pubkey": "qljIvNTV+gBPUYguOqExJf/zkTfz6OdEblzobQkAE/cuwy3WgHhHQf8GiWqaeXH/BqlVQ7ImadUvv9m1BlmSac+gIJSb8VLHWSSGADmXcatWDZTiaY0vSeZKN4mPJtWg",
+  "scope_id": "localhost_verifier",
+  "nonce": "01a77d3b3f98fea749940baaf311481e",
+  "context": "Default",
+  "requested_attributes": [],
+  "requested_predicates": [
+    {
+      "name": "fullName",
+      "predicate": "existence"
+    }
+  ],
+  "zk": {
+    "circuit_id": "age_check_v1",
+    "verification_key_id": "vk_01"
+  },
+  "request_uri": "http://localhost:3001/request?id=a0624eb45b631437835fd76c569111ed",
+  "response_uri": "http://localhost:3001/verify",
+  "expires_at": "2026-03-08T15:57:55.807Z",
+  "status": "pending",
+  "verifiedUsers": [],
+  "failedUsers": []
+}

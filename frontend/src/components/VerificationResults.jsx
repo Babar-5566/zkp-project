@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const VerificationResults = ({ requestId, onExpired }) => {
   const [results, setResults] = useState([]);
@@ -155,62 +156,7 @@ const VerificationResults = ({ requestId, onExpired }) => {
     </div>
   );
 
-  // ── Main view: two toggle buttons ──
-  if (activeView === null) {
-    return (
-      <div className="mt-8 bg-[#0B101B] border border-slate-800 rounded-2xl p-6">
-
-        {/* ✅ COUNTS */}
-        <div className="flex items-center gap-3 mb-6">
-          <h3 className="text-white font-bold">
-            Verification Results
-          </h3>
-        </div>
-
-        {status === "waiting" && results.length === 0 && failedResults.length === 0 && (
-          <p className="text-slate-400 text-sm mb-4">
-            Waiting for users to verify...
-          </p>
-        )}
-
-        <div className="flex gap-4">
-          {/* Verified User List Button */}
-          <button
-            onClick={() => switchView("verified")}
-            className="flex-1 py-4 rounded-xl font-black text-[10px] uppercase tracking-[3px] transition-all border"
-            style={{
-              background: results.length > 0 ? "rgba(16, 185, 129, 0.1)" : "rgba(30, 41, 59, 0.5)",
-              borderColor: results.length > 0 ? "rgba(16, 185, 129, 0.4)" : "rgba(51, 65, 85, 1)",
-              color: results.length > 0 ? "#34d399" : "#64748b"
-            }}
-          >
-            ✅ Verified Users ({results.length})
-          </button>
-
-          {/* Failed User List Button */}
-          <button
-            onClick={() => switchView("failed")}
-            className="flex-1 py-4 rounded-xl font-black text-[10px] uppercase tracking-[3px] transition-all border"
-            style={{
-              background: failedResults.length > 0 ? "rgba(239, 68, 68, 0.1)" : "rgba(30, 41, 59, 0.5)",
-              borderColor: failedResults.length > 0 ? "rgba(239, 68, 68, 0.4)" : "rgba(51, 65, 85, 1)",
-              color: failedResults.length > 0 ? "#f87171" : "#64748b"
-            }}
-          >
-            ❌ Failed Users ({failedResults.length})
-          </button>
-        </div>
-
-        {status === "expired" && (
-          <p className="text-red-400 text-sm mt-4">
-            Verification request expired
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  // ── Specific view: Verified or Failed ──
+  // ── Shared transition variants ──
   const isVerifiedView = activeView === "verified";
   const renderCard = isVerifiedView ? renderVerifiedCard : renderFailedCard;
   const viewTitle = isVerifiedView
@@ -218,54 +164,128 @@ const VerificationResults = ({ requestId, onExpired }) => {
     : `Failed Users (${failedResults.length})`;
 
   return (
-    <div key={activeView} className="animate-pop-up mt-8 bg-[#0B101B] border border-slate-800 rounded-2xl p-6">
+    <div className="mt-8">
+      <AnimatePresence mode="wait">
 
-      {/* Header with back button */}
-      <div className="flex items-center gap-3 mb-4">
-        <button
-          onClick={() => switchView(null)}
-          className="w-7 h-7 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-all text-xs"
-        >
-          ←
-        </button>
-        <h3 className="text-white font-bold">
-          {viewTitle}
-        </h3>
-      </div>
+        {/* ── Main view: two toggle buttons ── */}
+        {activeView === null && (
+          <motion.div
+            key="main-view"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="bg-[#0B101B] border border-slate-800 rounded-2xl p-6"
+          >
+            {/* ✅ COUNTS */}
+            <div className="flex items-center gap-3 mb-6">
+              <h3 className="text-white font-bold">
+                Verification Results
+              </h3>
+            </div>
 
-      {/* 🔍 Search bar */}
-      <div className="mb-4">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by Subject ID..."
-          className="w-full bg-slate-800 text-white rounded px-3 py-2 text-sm"
-        />
-      </div>
+            {status === "waiting" && results.length === 0 && failedResults.length === 0 && (
+              <p className="text-slate-400 text-sm mb-4">
+                Waiting for users to verify...
+              </p>
+            )}
 
-      {/* Empty state */}
-      {filteredList.length === 0 && (
-        <p className="text-slate-400 text-sm mb-4">
-          {searchQuery.trim()
-            ? "No matching users found."
-            : `No ${isVerifiedView ? "verified" : "failed"} users yet.`}
-        </p>
-      )}
+            <div className="flex gap-4">
+              {/* Verified User List Button */}
+              <button
+                onClick={() => switchView("verified")}
+                className="flex-1 py-4 rounded-xl font-black text-[10px] uppercase tracking-[3px] transition-all border"
+                style={{
+                  background: results.length > 0 ? "rgba(16, 185, 129, 0.1)" : "rgba(30, 41, 59, 0.5)",
+                  borderColor: results.length > 0 ? "rgba(16, 185, 129, 0.4)" : "rgba(51, 65, 85, 1)",
+                  color: results.length > 0 ? "#34d399" : "#64748b"
+                }}
+              >
+                ✅ Verified Users ({results.length})
+              </button>
 
-      {/* User cards */}
-      {filteredList.map((user, index) => {
-        const isMatched =
-          searchQuery.trim() &&
-          user.subjectId.toLowerCase().includes(searchQuery.toLowerCase());
-        return renderCard(user, index, isMatched);
-      })}
+              {/* Failed User List Button */}
+              <button
+                onClick={() => switchView("failed")}
+                className="flex-1 py-4 rounded-xl font-black text-[10px] uppercase tracking-[3px] transition-all border"
+                style={{
+                  background: failedResults.length > 0 ? "rgba(239, 68, 68, 0.1)" : "rgba(30, 41, 59, 0.5)",
+                  borderColor: failedResults.length > 0 ? "rgba(239, 68, 68, 0.4)" : "rgba(51, 65, 85, 1)",
+                  color: failedResults.length > 0 ? "#f87171" : "#64748b"
+                }}
+              >
+                ❌ Failed Users ({failedResults.length})
+              </button>
+            </div>
 
-      {status === "expired" && (
-        <p className="text-red-400 text-sm mt-4">
-          Verification request expired
-        </p>
-      )}
+            {status === "expired" && (
+              <p className="text-red-400 text-sm mt-4">
+                Verification request expired
+              </p>
+            )}
+          </motion.div>
+        )}
+
+        {/* ── Specific view: Verified or Failed ── */}
+        {activeView !== null && (
+          <motion.div
+            key={`detail-${activeView}`}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="bg-[#0B101B] border border-slate-800 rounded-2xl p-6"
+          >
+            {/* Header with back button */}
+            <div className="flex items-center gap-3 mb-4">
+              <button
+                onClick={() => switchView(null)}
+                className="w-7 h-7 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition-all text-xs"
+              >
+                ←
+              </button>
+              <h3 className="text-white font-bold">
+                {viewTitle}
+              </h3>
+            </div>
+
+            {/* 🔍 Search bar */}
+            <div className="mb-4">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by Subject ID..."
+                className="w-full bg-slate-800 text-white rounded px-3 py-2 text-sm"
+              />
+            </div>
+
+            {/* Empty state */}
+            {filteredList.length === 0 && (
+              <p className="text-slate-400 text-sm mb-4">
+                {searchQuery.trim()
+                  ? "No matching users found."
+                  : `No ${isVerifiedView ? "verified" : "failed"} users yet.`}
+              </p>
+            )}
+
+            {/* User cards */}
+            {filteredList.map((user, index) => {
+              const isMatched =
+                searchQuery.trim() &&
+                user.subjectId.toLowerCase().includes(searchQuery.toLowerCase());
+              return renderCard(user, index, isMatched);
+            })}
+
+            {status === "expired" && (
+              <p className="text-red-400 text-sm mt-4">
+                Verification request expired
+              </p>
+            )}
+          </motion.div>
+        )}
+
+      </AnimatePresence>
     </div>
   );
 };

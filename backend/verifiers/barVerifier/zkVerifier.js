@@ -183,21 +183,7 @@ async function verifySetMembershipProof(proof, publicSignals) {
     return { valid: true };
 }
 
-// ============================================
-// STRING MATCH — Poseidon(actual) == Poseidon(expected)
-// ============================================
 
-async function verifyStringMatchProof(proof, publicSignals) {
-    const result = await verifyPlonk("string_match_vkey.json", proof, publicSignals);
-    if (!result.valid) return result;
-
-    // publicSignals[0] = isMatch, publicSignals[1] = expected
-    if (publicSignals[0] !== "1") {
-        return { valid: false, reason: `String match failed: values do not match` };
-    }
-
-    return { valid: true };
-}
 
 // ============================================
 // CROSS-FIELD — valueA + valueB >= threshold
@@ -222,7 +208,7 @@ async function verifyCrossFieldProof(proof, publicSignals) {
 /**
  * Verify all zkProofs in the map.
  * Keys follow the pattern: ageProof, yearProof, rangeProof, eq_{field}, date_{field}, hash_{field},
- *                          setmem_{field}, strmatch_{field}, crossfield
+ *                          setmem_{field}, crossfield
  * @param {Object} zkProofs - Map of proof name → { proof, publicSignals }
  * @returns {Promise<{valid: boolean, reason?: string}>}
  */
@@ -246,8 +232,7 @@ async function verifyAllZkProofs(zkProofs) {
             result = await verifyHashProof(zkProof.proof, zkProof.publicSignals);
         } else if (key.startsWith("setmem_")) {
             result = await verifySetMembershipProof(zkProof.proof, zkProof.publicSignals);
-        } else if (key.startsWith("strmatch_")) {
-            result = await verifyStringMatchProof(zkProof.proof, zkProof.publicSignals);
+
         } else if (key === "crossfield" || key.startsWith("crossfield_")) {
             result = await verifyCrossFieldProof(zkProof.proof, zkProof.publicSignals);
         } else {
@@ -273,7 +258,7 @@ module.exports = {
     verifyDateProof,
     verifyHashProof,
     verifySetMembershipProof,
-    verifyStringMatchProof,
+
     verifyCrossFieldProof,
     verifyAllZkProofs
 };

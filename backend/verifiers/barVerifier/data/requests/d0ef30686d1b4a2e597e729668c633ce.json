@@ -1,0 +1,27 @@
+{
+  "version": "1.0",
+  "id": "d0ef30686d1b4a2e597e729668c633ce",
+  "type": "BbsProofRequest",
+  "credential_type": "identity_credential",
+  "issuer_pubkey": "qljIvNTV+gBPUYguOqExJf/zkTfz6OdEblzobQkAE/cuwy3WgHhHQf8GiWqaeXH/BqlVQ7ImadUvv9m1BlmSac+gIJSb8VLHWSSGADmXcatWDZTiaY0vSeZKN4mPJtWg",
+  "scope_id": "localhost_verifier",
+  "nonce": "cc3b5e35c5e20dbe62a13b3b9d660878",
+  "context": "Default",
+  "requested_attributes": [
+    {
+      "name": "board",
+      "predicate": "reveal"
+    }
+  ],
+  "requested_predicates": [],
+  "zk": {
+    "circuit_id": "age_check_v1",
+    "verification_key_id": "vk_01"
+  },
+  "request_uri": "http://localhost:3001/request?id=d0ef30686d1b4a2e597e729668c633ce",
+  "response_uri": "http://localhost:3001/verify",
+  "expires_at": "2026-03-08T09:51:03.996Z",
+  "status": "pending",
+  "verifiedUsers": [],
+  "failedUsers": []
+}
