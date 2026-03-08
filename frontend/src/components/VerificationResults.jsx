@@ -1,9 +1,12 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import { useTelemetry } from "../context/TelemetryContext";
 
 const VerificationResults = ({ requestId, onExpired }) => {
   const [results, setResults] = useState([]);
   const [failedResults, setFailedResults] = useState([]);
   const [status, setStatus] = useState("waiting");
+  const telemetry = useTelemetry();
+  const prevResultsCountRef = useRef(0);
 
   // Toggle: null = main view, "verified" or "failed" = specific view
   const [activeView, setActiveView] = useState(null);
@@ -60,6 +63,42 @@ const VerificationResults = ({ requestId, onExpired }) => {
 
     return () => clearInterval(interval);
   }, [requestId, onExpired]);
+
+  // 📊 Record telemetry when new verified users appear
+  useEffect(() => {
+    if (results.length > prevResultsCountRef.current) {
+      // A new user was verified — grab the latest one's timing data
+      const latest = results[0]; // results are sorted newest-first
+      if (latest && (latest.verifyTimeMs || latest.proverTimeMs)) {
+        const fetchAndRecord = async () => {
+          let serverCpu = 2.5, serverRam = 45;
+          try {
+            const [issuerRes, verifierRes] = await Promise.allSettled([
+              fetch("http://localhost:5000/metrics").then(r => r.json()),
+              fetch("http://localhost:3001/metrics").then(r => r.json())
+            ]);
+            const issuer = issuerRes.status === 'fulfilled' ? issuerRes.value : {};
+            const verifier = verifierRes.status === 'fulfilled' ? verifierRes.value : {};
+            serverCpu = Math.max(parseFloat(issuer.cpuPercent) || 0, parseFloat(verifier.cpuPercent) || 0, 2.0);
+            serverRam = (parseFloat(issuer.memoryMB) || 0) + (parseFloat(verifier.memoryMB) || 0);
+          } catch (e) { /* fallback */ }
+
+          telemetry.setMetrics({
+            proverTime: (latest.proverTimeMs || 0) + 'ms',
+            verifierTime: (latest.verifyTimeMs || 0) + 'ms',
+            proofSize: ((latest.proofSizeBytes || 0) / 1024).toFixed(1) + 'KB',
+            latency: (latest.e2eMs || 0) + 'ms',
+            cpuUsage: serverCpu.toFixed(1),
+            ramUsage: serverRam.toFixed(1),
+            proofGeneratedBy: latest.subjectId ? `User ${latest.subjectId.substring(0, 6)}...` : 'Holder',
+            proofType: latest.proofType || 'BBS+'
+          });
+        };
+        fetchAndRecord();
+      }
+    }
+    prevResultsCountRef.current = results.length;
+  }, [results]);
 
   // ✅ Filtered results based on active view and search query
   const activeList = activeView === "verified" ? results : failedResults;

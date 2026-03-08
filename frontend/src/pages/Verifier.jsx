@@ -446,6 +446,32 @@ const Verifier = () => {
       addLog("Proof verified by verifier ✅", "success");
       addLog(`Show to verifier: ${nullifier.substring(0, 5)}...${nullifier.substring(nullifier.length - 5)}`, "success");
 
+      // Fetch server metrics for telemetry
+      let serverCpu = 2.5, serverRam = 45
+      try {
+        const [issuerRes, verifierRes] = await Promise.allSettled([
+          fetch("http://localhost:5000/metrics").then(r => r.json()),
+          fetch("http://localhost:3001/metrics").then(r => r.json())
+        ])
+        const issuer = issuerRes.status === 'fulfilled' ? issuerRes.value : {}
+        const verifier = verifierRes.status === 'fulfilled' ? verifierRes.value : {}
+        serverCpu = Math.max(parseFloat(issuer.cpuPercent) || 0, parseFloat(verifier.cpuPercent) || 0, 2.0)
+        serverRam = (parseFloat(issuer.memoryMB) || 0) + (parseFloat(verifier.memoryMB) || 0)
+      } catch (e) { /* fallback values used */ }
+
+      // Record telemetry (QR scan flow)
+      const proofSizeKB = (proofSizeBytes / 1024).toFixed(1)
+      telemetry.setMetrics({
+        proverTime: proverTimeMs + 'ms',
+        verifierTime: (result.verifyTimeMs || 0) + 'ms',
+        proofSize: proofSizeKB + 'KB',
+        latency: e2eMs + 'ms',
+        cpuUsage: serverCpu.toFixed(1),
+        ramUsage: serverRam.toFixed(1),
+        proofGeneratedBy: selectedMapping[Object.keys(selectedMapping)[0]]?.type?.find(t => t !== 'VerifiableCredential')?.replace('Credential', '')?.replace(/([A-Z])/g, ' $1')?.trim() || 'Unknown Card',
+        proofType: proofTypeStr
+      })
+
     } catch (err) {
       console.error(err)
       setStatus("error")
