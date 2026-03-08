@@ -7,7 +7,7 @@ const { verifyProof } = require("./verifyProof");
 
 const fs = require("fs");
 const path = require("path");
-const usedNullifiers = new Set();
+const { hasNullifier, addNullifier } = require("./nullifierStore");
 
 // Rate limiter: track attempts per request ID
 const MAX_ATTEMPTS_PER_REQUEST = 3;
@@ -17,10 +17,10 @@ const requestAttempts = {}; // { requestId: { count, firstAttemptAt } }
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 const nonces = {};
-const requests = {};
+const { saveRequest, getRequest } = require("./requestStore");
 
 function generateId() {
   return crypto.randomBytes(16).toString("hex");
@@ -30,18 +30,32 @@ function expiry(seconds) {
   return new Date(Date.now() + seconds * 1000).toISOString();
 }
 
-function buildBbsProofRequest({
+// Cache the issuer's public key (fetched from API, never reads secret key)
+let cachedIssuerPublicKey = null;
+
+async function getIssuerPublicKey() {
+  if (cachedIssuerPublicKey) return cachedIssuerPublicKey;
+  try {
+    const res = await fetch("http://localhost:5000/api/issuer/public-key");
+    const data = await res.json();
+    cachedIssuerPublicKey = data.publicKey;
+    console.log("🔑 Fetched issuer public key from API.");
+    return cachedIssuerPublicKey;
+  } catch (err) {
+    console.error("❌ Failed to fetch issuer public key:", err.message);
+    throw new Error("Cannot reach issuer for public key");
+  }
+}
+
+async function buildBbsProofRequest({
   requested_attributes = [],
   requested_predicates = [],
   nonce
 }) {
   const id = generateId();
 
-  const issuerKeys = JSON.parse(
-    fs.readFileSync(path.join(__dirname, "../../issuer/config/issuerKeys.json"))
-  );
+  const ISSUER_PUBLIC_KEY = await getIssuerPublicKey();
 
-  const ISSUER_PUBLIC_KEY = issuerKeys.publicKey;
   return {
     version: "1.0",
     id,
@@ -69,24 +83,24 @@ app.get("/nonce", (req, res) => {
   res.json({ nonce });
 });
 
-app.post("/create-proof-request", (req, res) => {
+app.post("/create-proof-request", async (req, res) => {
   try {
     const { requested_attributes = [], requested_predicates = [] } = req.body;
     const nonce = generateId();
     nonces[nonce] = expiry(300);
 
-    const proofRequest = buildBbsProofRequest({
+    const proofRequest = await buildBbsProofRequest({
       requested_attributes,
       requested_predicates,
       nonce
     });
 
-    requests[proofRequest.id] = {
+    saveRequest(proofRequest.id, {
       ...proofRequest,
       status: "pending",
       verifiedUsers: [],
       failedUsers: []
-    };
+    });
 
     res.json(proofRequest);
   } catch (err) {
@@ -99,10 +113,10 @@ app.post("/create-proof-request", (req, res) => {
 app.post("/create-proof-request-mock", (req, res) => {
   const id = uuidv4();
 
-  requests[id] = {
+  saveRequest(id, {
     status: "pending",
     policy: req.body
-  };
+  });
 
   res.json({
     request_url: `http://localhost:3001/request?id=${id}`
@@ -112,9 +126,9 @@ app.post("/create-proof-request-mock", (req, res) => {
 app.get("/request", (req, res) => {
   const { id } = req.query;
 
-  if (!requests[id]) return res.status(404).send("Not found Hey");
+  if (!getRequest(id)) return res.status(404).send("Not found Hey");
 
-  res.json(requests[id]);
+  res.json(getRequest(id));
 });
 
 // === Server Metrics for Telemetry ===
@@ -149,7 +163,7 @@ app.post("/verify", async (req, res) => {
     }
 
     // Check if this proof was already successfully used
-    if (usedNullifiers.has(nullifier)) {
+    if (hasNullifier(nullifier)) {
       console.log("❌ Double-spending detected! This proof was already used.");
       return res.status(400).json({ error: "This proof has already been used." });
     }
@@ -173,13 +187,13 @@ app.post("/verify", async (req, res) => {
     console.log(`📋 Attempt ${tracker.count}/${MAX_ATTEMPTS_PER_REQUEST} for request ${id}`);
 
     // 1️⃣ Validate request ID
-    if (!id || !requests[id]) {
+    if (!id || !getRequest(id)) {
       console.log("Invalid request ID");
 
       return res.status(400).json({ error: "Invalid request ID" });
     }
 
-    const request = requests[id];
+    const request = getRequest(id);
 
     // 2️⃣ Check request expiry
     if (Date.now() > new Date(request.expires_at).getTime()) {
@@ -324,8 +338,11 @@ app.post("/verify", async (req, res) => {
       proofType: clientProofType || 'BBS+'
     });
 
+    // Persist updated request to disk
+    saveRequest(id, request);
+
     // ✅ Only store nullifier AFTER successful verification (allows retry on failure)
-    usedNullifiers.add(nullifier);
+    addNullifier(nullifier);
     console.log("🔒 Nullifier stored — proof cannot be reused.");
 
     return res.json({ access: "GRANTED", verifyTimeMs });
@@ -339,7 +356,7 @@ app.post("/verify", async (req, res) => {
 app.get("/request-status", (req, res) => {
   const { id } = req.query;
 
-  const request = requests[id];
+  const request = getRequest(id);
 
   if (!request) {
     // console.log(`📡 [request-status] ID=${id?.substring(0,8)}... → NOT FOUND (returning unknown)`);
@@ -354,6 +371,36 @@ app.get("/request-status", (req, res) => {
     failedUsers: request.failedUsers || []
   });
 });
+
+// ============================================
+// PERIODIC CLEANUP — prevent memory leaks
+// ============================================
+// Runs every 5 minutes: removes expired nonces and stale rate limit trackers
+setInterval(() => {
+  const now = Date.now();
+  let noncesCleaned = 0;
+  let trackersCleaned = 0;
+
+  // Clean expired nonces
+  for (const [nonce, expiryTime] of Object.entries(nonces)) {
+    if (now > new Date(expiryTime).getTime()) {
+      delete nonces[nonce];
+      noncesCleaned++;
+    }
+  }
+
+  // Clean stale rate limit trackers (10x the window)
+  for (const [id, tracker] of Object.entries(requestAttempts)) {
+    if (now - tracker.firstAttemptAt > RATE_LIMIT_WINDOW_MS * 10) {
+      delete requestAttempts[id];
+      trackersCleaned++;
+    }
+  }
+
+  if (noncesCleaned > 0 || trackersCleaned > 0) {
+    console.log(`🧹 Cleanup: removed ${noncesCleaned} expired nonces, ${trackersCleaned} stale rate trackers.`);
+  }
+}, 5 * 60 * 1000); // every 5 minutes
 
 app.listen(3001, () => {
   console.log("Server running on port 3001");

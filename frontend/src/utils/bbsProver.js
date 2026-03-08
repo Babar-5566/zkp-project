@@ -38,13 +38,18 @@ export async function generateBbsProof({ mapping, request, context = "Default" }
         throw new Error(`Invalid VC for ${attribute}`)
       }
 
-      console.log(vc);
+      // console.log(vc);
 
       const messageBytes = vc.proof.signature.messages.map(attr =>
         new TextEncoder().encode(attr)
       )
 
-      const publicKey = base64ToUint8Array(vc.publicKey)
+      // Use public key from proof request, fallback to credential (backward compat)
+      const pubKeyBase64 = request.issuer_pubkey || vc.publicKey;
+      if (!pubKeyBase64) {
+        throw new Error(`No public key available — not in proof request or credential for ${attribute}`);
+      }
+      const publicKey = base64ToUint8Array(pubKeyBase64)
       const signature = base64ToUint8Array(vc.proof.signature.signature)
 
       const contextBytes = new TextEncoder().encode(context)

@@ -240,22 +240,29 @@ export async function generateYearProof(year, yearThreshold) {
  * @returns {number} epoch days
  */
 function dateToEpochDays(dateStr) {
-    let date;
+    let year, month, day;
 
     // Try DD/MM/YYYY format
     if (dateStr.includes("/")) {
         const parts = dateStr.split("/");
-        date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        day = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+        year = parseInt(parts[2]);
     } else {
         // YYYY-MM-DD format (from date input)
-        date = new Date(dateStr);
+        const parts = dateStr.split("-");
+        year = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+        day = parseInt(parts[2]);
     }
 
-    if (isNaN(date.getTime())) {
+    if (isNaN(year) || isNaN(month) || isNaN(day)) {
         throw new Error(`Cannot parse date: "${dateStr}"`);
     }
 
-    return Math.floor(date.getTime() / 86400000);
+    // Use Date.UTC to avoid timezone offset issues
+    const utcMs = Date.UTC(year, month - 1, day);
+    return Math.floor(utcMs / 86400000);
 }
 
 /**
@@ -270,16 +277,19 @@ export async function generateDateProof(dateValue, dateThreshold) {
 
     console.log(`🔐 [Browser] Generating PLONK date proof: date=${epochValue} (${dateValue}), threshold=${epochThreshold} (${dateThreshold})`);
 
-    if (epochValue <= epochThreshold) {
+    // Pre-check: credential date must be on or after the threshold date
+    if (epochValue < epochThreshold) {
         throw new Error(
-            `Date ${dateValue} does not satisfy comparison with ${dateThreshold}. ` +
+            `Date ${dateValue} is before threshold ${dateThreshold}. ` +
             `Cannot generate a proof for a false statement.`
         );
     }
 
+    // Circuit uses strict GreaterThan, so subtract 1 from threshold
+    // to achieve >= semantics (same-day passes)
     return generatePlonkProof("date_check", {
         dateValue: epochValue,
-        dateThreshold: epochThreshold
+        dateThreshold: epochThreshold - 1
     }, "Date Check");
 }
 

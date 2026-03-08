@@ -1,30 +1,33 @@
 const { v4: uuidv4 } = require("uuid");
 const { signAttributes } = require("../services/signatureService");
-const { validateDocument } = require("../utils/validator");
+const { validateDocument, getAllowedFields } = require("../utils/validator");
 const { getKeyPair } = require("../config/keys");
-const { allocateIndex } = require ("../services/revocationStore");
+const { allocateIndex } = require("../services/revocationStore");
 
 async function issueCredential(req, res) {
     try {
-        console.log("Received documentType:", req.body.documentType);
-        console.log("Received data:", req.body.data);
-
         const { idType, data } = req.body;
 
         // Validate document
         const validation = validateDocument(idType, data);
-        console.log("Validation result:", validation);
         if (!validation.valid) {
             return res.status(400).json({ error: validation.error });
         }
 
-        // Prepare attributes array for signing
-        const attributes = Object.entries(data).map(
+        // 🛡️ Sanitize: only allow whitelisted fields (prevents injection of extra fields)
+        const allowedFields = getAllowedFields(idType);
+        const sanitizedData = {};
+        for (const key of allowedFields) {
+            if (data[key] !== undefined) {
+                sanitizedData[key] = data[key];
+            }
+        }
+
+        // Prepare attributes array for signing (using sanitized data only)
+        const attributes = Object.entries(sanitizedData).map(
             ([key, value]) => `${key}:${typeof value === "object" ? JSON.stringify(value) : value}`
         );
-        
-        console.log("attributes: "+attributes);
-        
+
         // Generate BBS+ signature
         const signature = await signAttributes(attributes);
 
@@ -56,13 +59,13 @@ async function issueCredential(req, res) {
 
             issuer: issuerDid,
 
-            holderCommitment: data.holderCommitment,
+            holderCommitment: sanitizedData.holderCommitment,
 
             issuanceDate: new Date().toISOString(),
 
             credentialSubject: {
                 id: holderDid,
-                ...data
+                ...sanitizedData
             },
 
             credentialStatus: {
@@ -78,15 +81,10 @@ async function issueCredential(req, res) {
                 proofPurpose: "assertionMethod",
                 verificationMethod: `${issuerDid}#key-1`,
                 signature,
-                
-            },
-
-            publicKey: Buffer.from(getKeyPair().publicKey).toString("base64")
+            }
         };
 
-        console.log(verifiableCredential);
-        
-        // 🔥 Send output to frontend
+        // Send output to frontend
         res.json(verifiableCredential);
 
     } catch (err) {

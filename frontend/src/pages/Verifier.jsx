@@ -326,7 +326,9 @@ const Verifier = () => {
       }
 
       const encoder = new TextEncoder()
-      const data = encoder.encode(holderSecret + proofRequest.id)
+      const salt = crypto.getRandomValues(new Uint8Array(16))
+      const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('')
+      const data = encoder.encode(holderSecret + proofRequest.id + saltHex)
 
       const hashBuffer = await crypto.subtle.digest("SHA-256", data)
       const hashArray = Array.from(new Uint8Array(hashBuffer))
@@ -629,7 +631,9 @@ const Verifier = () => {
             const holderSecret = localStorage.getItem("holderSecret")
             if (holderSecret) {
               const encoder = new TextEncoder()
-              const data = encoder.encode(holderSecret + (proofRequest.id || ""))
+              const failSalt = crypto.getRandomValues(new Uint8Array(16))
+              const failSaltHex = Array.from(failSalt).map(b => b.toString(16).padStart(2, '0')).join('')
+              const data = encoder.encode(holderSecret + (proofRequest.id || "") + failSaltHex)
               const hashBuffer = await crypto.subtle.digest("SHA-256", data)
               const hashArray = Array.from(new Uint8Array(hashBuffer))
               const failNullifier = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')

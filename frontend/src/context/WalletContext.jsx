@@ -5,7 +5,8 @@
  * Update: Added rollNumber to initial state.
  */
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { encryptAndStore, decryptFromStore } from '../utils/walletCrypto';
 // import { setIsSubmitting } from "../pages/Issuer"
 
 const WalletContext = createContext();
@@ -33,23 +34,40 @@ export const WalletProvider = ({ children }) => {
     setLogs(prev => [`[${timestamp}] ${msg}`, ...prev]);
   };
 
-  // Storing of creds in local storage :-
+  // Storing of creds in localStorage (AES-256-GCM encrypted)
 
-  // Utility to get stored credentials
-  const getStoredCredentials = () => {
-    const stored = localStorage.getItem("credentials");
-    return stored ? JSON.parse(stored) : [];
+  // Ref to hold the secret for encryption operations
+  const secretRef = useRef(null);
+
+  // Utility to save credentials (encrypted)
+  const saveCredentials = async (creds) => {
+    const secret = secretRef.current || localStorage.getItem("holderSecret");
+    if (secret) {
+      await encryptAndStore(creds, secret);
+    } else {
+      // Fallback if no secret yet (first launch before issuing)
+      localStorage.setItem("credentials", JSON.stringify(creds));
+    }
   };
 
-  // Utility to save credentials
-  const saveCredentials = (creds) => {
-    localStorage.setItem("credentials", JSON.stringify(creds));
-  };
-
-  // On component mount, load credentials from localStorage
+  // On component mount, load and decrypt credentials from localStorage
   useEffect(() => {
-    const stored = getStoredCredentials();
-    if (stored.length > 0) setCredentials(stored);
+    const loadCredentials = async () => {
+      const secret = localStorage.getItem("holderSecret");
+      if (secret) {
+        secretRef.current = secret;
+        const stored = await decryptFromStore(secret);
+        if (stored.length > 0) setCredentials(stored);
+      } else {
+        // No secret yet — check for plain credentials (first-time user)
+        const plain = localStorage.getItem("credentials");
+        if (plain) {
+          const creds = JSON.parse(plain);
+          if (creds.length > 0) setCredentials(creds);
+        }
+      }
+    };
+    loadCredentials();
   }, []);
 
   // lock engine for only showing the documents not signed or deleted signed
@@ -77,6 +95,8 @@ export const WalletProvider = ({ children }) => {
 
       localStorage.setItem("holderSecret", secret);
     }
+
+    secretRef.current = secret;
 
     return secret;
   };
@@ -117,7 +137,8 @@ export const WalletProvider = ({ children }) => {
       const response = await fetch("http://localhost:5000/api/issuer/issue", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "x-api-key": "zkp-issuer-secret-key-2026"
         },
         body: JSON.stringify(payload)
       });

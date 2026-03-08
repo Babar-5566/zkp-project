@@ -30,9 +30,8 @@ const VerificationResults = ({ requestId, onExpired }) => {
         );
         const data = await res.json();
 
+        // ✅ Verified users — newest first
         const users = data.verifiedUsers || [];
-
-        // ✅ Always keep newest on top
         const sorted = [...users].sort(
           (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
         );
@@ -62,18 +61,16 @@ const VerificationResults = ({ requestId, onExpired }) => {
     return () => clearInterval(interval);
   }, [requestId, onExpired]);
 
-  // ✅ SEARCH LOGIC — compute matched items for the active list
-  const hasSearch = searchQuery.trim().length > 0;
-
+  // ✅ Filtered results based on active view and search query
   const activeList = activeView === "verified" ? results : failedResults;
 
-  const matchedItems = useMemo(() => {
-    if (!hasSearch) return [];
+  const filteredList = useMemo(() => {
+    if (!searchQuery.trim()) return activeList;
     const q = searchQuery.toLowerCase();
     return activeList.filter((user) =>
       user.subjectId.toLowerCase().includes(q)
     );
-  }, [searchQuery, activeList, hasSearch]);
+  }, [searchQuery, activeList]);
 
   // ── No request yet ──
   if (!requestId) {
@@ -93,11 +90,14 @@ const VerificationResults = ({ requestId, onExpired }) => {
     `${id.substring(0, 5)}...${id.substring(id.length - 5)}`;
 
   // ── Render a single verified user card ──
-  const renderVerifiedCard = (user, index, keyPrefix, highlighted) => (
+  const renderVerifiedCard = (user, index, highlighted) => (
     <div
-      key={`${keyPrefix}-${index}`}
-      className={`p-3 rounded-xl mb-2 ${highlighted ? "" : "border bg-slate-900 border-slate-700"}`}
-      style={highlighted ? { border: "2px solid #00e676", background: "rgba(0, 230, 118, 0.1)" } : undefined}
+      key={`verified-${index}`}
+      className={`animate-card-slide-in p-3 rounded-xl mb-2 border ${highlighted
+        ? "bg-orange-900/40 border-orange-500"
+        : "bg-slate-900 border-slate-700"
+        }`}
+      style={{ animationDelay: `${index * 90}ms` }}
     >
       <div className="flex items-center justify-between">
         <p className="text-emerald-400 font-mono text-xs">
@@ -129,11 +129,14 @@ const VerificationResults = ({ requestId, onExpired }) => {
   );
 
   // ── Render a single failed user card ──
-  const renderFailedCard = (user, index, keyPrefix, highlighted) => (
+  const renderFailedCard = (user, index, highlighted) => (
     <div
-      key={`${keyPrefix}-${index}`}
-      className={`p-3 rounded-xl mb-2 ${highlighted ? "" : "border bg-red-950/40 border-red-500/30"}`}
-      style={highlighted ? { border: "2px solid #00e676", background: "rgba(0, 230, 118, 0.1)" } : undefined}
+      key={`failed-${index}`}
+      className={`animate-card-slide-in p-3 rounded-xl mb-2 border ${highlighted
+        ? "bg-orange-900/40 border-orange-500"
+        : "bg-red-950/40 border-red-500/30"
+        }`}
+      style={{ animationDelay: `${index * 90}ms` }}
     >
       <div className="flex items-center justify-between">
         <p className="text-red-400 font-mono text-xs">
@@ -209,14 +212,13 @@ const VerificationResults = ({ requestId, onExpired }) => {
 
   // ── Specific view: Verified or Failed ──
   const isVerifiedView = activeView === "verified";
-  const listData = isVerifiedView ? results : failedResults;
   const renderCard = isVerifiedView ? renderVerifiedCard : renderFailedCard;
   const viewTitle = isVerifiedView
     ? `Verified Users (${results.length})`
     : `Failed Users (${failedResults.length})`;
 
   return (
-    <div className="mt-8 bg-[#0B101B] border border-slate-800 rounded-2xl p-6">
+    <div key={activeView} className="animate-pop-up mt-8 bg-[#0B101B] border border-slate-800 rounded-2xl p-6">
 
       {/* Header with back button */}
       <div className="flex items-center gap-3 mb-4">
@@ -231,40 +233,32 @@ const VerificationResults = ({ requestId, onExpired }) => {
         </h3>
       </div>
 
-      {/* 🔍 Internal search bar */}
+      {/* 🔍 Search bar */}
       <div className="mb-4">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={`Search by Subject ID...`}
+          placeholder="Search by Subject ID..."
           className="w-full bg-slate-800 text-white rounded px-3 py-2 text-sm"
         />
       </div>
 
-      {listData.length === 0 && (
+      {/* Empty state */}
+      {filteredList.length === 0 && (
         <p className="text-slate-400 text-sm mb-4">
-          No {isVerifiedView ? "verified" : "failed"} users yet.
+          {searchQuery.trim()
+            ? "No matching users found."
+            : `No ${isVerifiedView ? "verified" : "failed"} users yet.`}
         </p>
       )}
 
-      {/* 📌 Pinned matched results at top */}
-      {hasSearch && matchedItems.length > 0 && (
-        <>
-          {matchedItems.map((user, index) =>
-            renderCard(user, index, "pinned", true)
-          )}
-          <hr style={{ margin: "15px 0", borderColor: "#444" }} />
-        </>
-      )}
-
-      {/* Full original list */}
-      {listData.map((user, index) => {
+      {/* User cards */}
+      {filteredList.map((user, index) => {
         const isMatched =
-          hasSearch &&
+          searchQuery.trim() &&
           user.subjectId.toLowerCase().includes(searchQuery.toLowerCase());
-
-        return renderCard(user, index, activeView, isMatched);
+        return renderCard(user, index, isMatched);
       })}
 
       {status === "expired" && (

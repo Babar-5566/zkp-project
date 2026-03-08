@@ -1,0 +1,58 @@
+{
+  "version": "1.0",
+  "id": "493182a90af2b9956623780b700b1626",
+  "type": "BbsProofRequest",
+  "credential_type": "identity_credential",
+  "issuer_pubkey": "g7/z5fPHV51VnJQZWm6Kd/TYxITJxfGUNFu7PRZHXD3yHETzP0Yf4ZX0GuL9e/7sDsb9oIdwzjJjJxwXpeesg/mdeV99F4ZTCj7Gi3ShR620dGAzS8OaSq05RlF0NEfO",
+  "scope_id": "localhost_verifier",
+  "nonce": "09b7ce6ad869ecb46c61bb247b1bdcc3",
+  "context": "Default",
+  "requested_attributes": [
+    {
+      "name": "fullName",
+      "predicate": "reveal"
+    },
+    {
+      "name": "rollNumber",
+      "predicate": "reveal"
+    }
+  ],
+  "requested_predicates": [],
+  "zk": {
+    "circuit_id": "age_check_v1",
+    "verification_key_id": "vk_01"
+  },
+  "request_uri": "http://localhost:3001/request?id=493182a90af2b9956623780b700b1626",
+  "response_uri": "http://localhost:3001/verify",
+  "expires_at": "2026-03-08T03:37:30.724Z",
+  "status": "verified",
+  "verifiedUsers": [
+    {
+      "subjectId": "9c5aaf4fe5f066a0c424d9c9e2e17d8662c07d583b47661c4607307155d39f3d",
+      "timestamp": "2026-03-08T03:32:48.375Z",
+      "revealedAttributes": {
+        "fullName": "drv",
+        "rollNumber": "24100123055"
+      },
+      "verifyTimeMs": 100,
+      "proverTimeMs": 96,
+      "proofSizeBytes": 1931,
+      "e2eMs": 97,
+      "proofType": "BBS+ Only"
+    },
+    {
+      "subjectId": "c30cfd61656eae75db3bbad0df769babc7c8c487b7a31835a3d65604c7ca02d0",
+      "timestamp": "2026-03-08T03:33:02.858Z",
+      "revealedAttributes": {
+        "fullName": "Biradar",
+        "rollNumber": "24100123055"
+      },
+      "verifyTimeMs": 127,
+      "proverTimeMs": 101,
+      "proofSizeBytes": 1895,
+      "e2eMs": 101,
+      "proofType": "BBS+ Only"
+    }
+  ],
+  "failedUsers": []
+}

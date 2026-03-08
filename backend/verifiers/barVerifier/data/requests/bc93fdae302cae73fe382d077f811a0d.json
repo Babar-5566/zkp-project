@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "id": "bc93fdae302cae73fe382d077f811a0d",
+  "type": "BbsProofRequest",
+  "credential_type": "identity_credential",
+  "issuer_pubkey": "g7/z5fPHV51VnJQZWm6Kd/TYxITJxfGUNFu7PRZHXD3yHETzP0Yf4ZX0GuL9e/7sDsb9oIdwzjJjJxwXpeesg/mdeV99F4ZTCj7Gi3ShR620dGAzS8OaSq05RlF0NEfO",
+  "scope_id": "localhost_verifier",
+  "nonce": "ce063c7712a1c50a6ce878b301657262",
+  "context": "Default",
+  "requested_attributes": [],
+  "requested_predicates": [
+    {
+      "name": "dob",
+      "predicate": "date comparison",
+      "value": "2026-03-02"
+    }
+  ],
+  "zk": {
+    "circuit_id": "age_check_v1",
+    "verification_key_id": "vk_01"
+  },
+  "request_uri": "http://localhost:3001/request?id=bc93fdae302cae73fe382d077f811a0d",
+  "response_uri": "http://localhost:3001/verify",
+  "expires_at": "2026-03-08T03:55:27.805Z",
+  "status": "verified",
+  "verifiedUsers": [
+    {
+      "subjectId": "c16b149bc636e476aa88c8d9ce8bb0bdab78492dc5010970295aeef745fcbf5f",
+      "timestamp": "2026-03-08T03:54:27.009Z",
+      "revealedAttributes": {},
+      "verifyTimeMs": 152,
+      "proverTimeMs": 62,
+      "proofSizeBytes": 3096,
+      "e2eMs": 395,
+      "proofType": "zk-SNARK (PLONK × 1)"
+    }
+  ],
+  "failedUsers": [
+    {
+      "subjectId": "bb86d1949b00fd29fea21c6d2b9b862332e31145dd7d4c8cb3b582013adcf9cf",
+      "timestamp": "2026-03-08T03:50:51.444Z",
+      "reason": "zk-SNARK proof could not be generated — constraint not satisfied"
+    },
+    {
+      "subjectId": "1c54e03def97ff4c1f10d3227706d7c5215e78efcad66405ae3a7d582a274512",
+      "timestamp": "2026-03-08T03:51:15.349Z",
+      "reason": "zk-SNARK proof could not be generated — constraint not satisfied"
+    },
+    {
+      "subjectId": "b330b8142a4045a78d90534ee6d3f2331d667149fba854c5b66fe9fd62874439",
+      "timestamp": "2026-03-08T03:51:54.853Z",
+      "reason": "zk-SNARK proof could not be generated — constraint not satisfied"
+    }
+  ]
+}

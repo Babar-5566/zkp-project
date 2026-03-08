@@ -93,49 +93,54 @@ const Wallet = () => {
                 </button>
 
                 {/* Expandable section */}
-                {expandedCardId === card.id && (
-                  <motion.div
-                    layout
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2"
-                  >
-                    {getFieldsByIdType(card?.credentialSubject?.idType).map((field) => {
-                      const value = card?.credentialSubject?.[field.name];
-                      if (!value) return null;
+                <AnimatePresence initial={false}>
+                  {expandedCardId === card.id && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                      style={{ overflow: "hidden" }}
+                    >
+                      <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
+                        {getFieldsByIdType(card?.credentialSubject?.idType).map((field) => {
+                          const value = card?.credentialSubject?.[field.name];
+                          if (!value) return null;
 
-                      return (
-                        <div key={field.name} className="flex justify-between text-xs">
-                          <span className="text-slate-400">{field.label}</span>
-                          <span className="text-white font-semibold">{value}</span>
+                          return (
+                            <div key={field.name} className="flex justify-between text-xs">
+                              <span className="text-slate-400">{field.label}</span>
+                              <span className="text-white font-semibold">{value}</span>
+                            </div>
+                          );
+                        })}
+
+                        {/* Backend meta */}
+
+                        <div className="flex flex-col text-xs">
+                          <span className="text-slate-400">Issued At</span>
+                          <span className="text-white font-semibold">
+                            {card.issuanceDate}
+                          </span>
                         </div>
-                      );
-                    })}
 
-                    {/* Backend meta */}
+                        <div className="flex flex-col text-xs">
+                          <span className="text-slate-400">Issuer</span>
+                          <span className="text-white font-semibold break-all">
+                            {card.issuer || "did:example:gov-india"}
+                          </span>
+                        </div>
 
-                    <div className="flex flex-col text-xs">
-                      <span className="text-slate-400">Issued At</span>
-                      <span className="text-white font-semibold">
-                        {card.issuanceDate}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col text-xs">
-                      <span className="text-slate-400">Public Key</span>
-                      <span className="text-white font-semibold break-all">
-                        {card.publicKey}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col text-xs">
-                      <span className="text-slate-400">Signature</span>
-                      <span className="text-white font-semibold break-all">
-                        {card?.proof?.signature?.signature}
-                      </span>
-                    </div>
-                  </motion.div>
-                )}
+                        <div className="flex flex-col text-xs">
+                          <span className="text-slate-400">Signature</span>
+                          <span className="text-white font-semibold break-all">
+                            {card?.proof?.signature?.signature}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
 
 

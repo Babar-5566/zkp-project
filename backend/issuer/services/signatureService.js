@@ -32,10 +32,10 @@ async function signAttributes(attributes, context = "Default") {
       context: contextEncoded
     });
 
-    console.log("sinature:"+signature);
-    console.log("messages: "+messages);
-    console.log("context: "+contextEncoded);
-    
+    // console.log("sinature:"+signature);
+    // console.log("messages: "+messages);
+    // console.log("context: "+contextEncoded);
+
     // ✅ IMPORTANT: return full signing metadata
     return {
       signature: Buffer.from(signature).toString("base64"),
