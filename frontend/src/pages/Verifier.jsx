@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, Fingerprint, Lock, ChevronRight, CheckSquare, Square,
-  Play, Server, RefreshCw, Code, ChevronLeft
+  Play, Server, RefreshCw, Code, ChevronLeft, ChevronDown
 } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { getFieldsByIdType } from "../utils/schema";
@@ -39,6 +39,7 @@ const Verifier = () => {
 
   // FIXED: State declared at top level to prevent ReferenceError
   const [step, setStep] = useState(0);
+  const [activeDropdown, setActiveDropdown] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [disclosedFields, setDisclosedFields] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -722,16 +723,50 @@ const Verifier = () => {
         return
       }
 
-      await new Promise(r => setTimeout(r, 800))
+    await new Promise(r => setTimeout(r, 800))
 
-      addLog("Proof generated successfully ✅", "success")
+    addLog("Proof generated successfully ✅", "success")
 
+<<<<<<< HEAD
+    // Calculate proof size
+    const proofSizeBytes = JSON.stringify(proof).length + (zkProofResult ? JSON.stringify(zkProofResult).length : 0)
+    const proofSizeKB = (proofSizeBytes / 1024).toFixed(1)
+=======
       // Calculate proof size
       const proofSizeBytes = JSON.stringify(proof).length + (Object.keys(zkProofsLocal).length > 0 ? JSON.stringify(zkProofsLocal).length : 0)
       const proofSizeKB = (proofSizeBytes / 1024).toFixed(1)
+>>>>>>> 4c2a3c5f9470bac4758d2bcca975ccf699f13eb3
 
-      const endToEndMs = performance.now() - e2eStart
+    const endToEndMs = performance.now() - e2eStart
 
+<<<<<<< HEAD
+    // Collect the server metrics that were fetched concurrently
+    let serverCpu = 2.5, serverRam = 45, verifierTimeMs = 0
+    try {
+      const results = await metricsPromise
+      const issuer = results[0]?.status === 'fulfilled' ? results[0].value : {}
+      const verifier = results[1]?.status === 'fulfilled' ? results[1].value : {}
+      const cpuI = parseFloat(issuer.cpuPercent) || 0
+      const cpuV = parseFloat(verifier.cpuPercent) || 0
+      const ramI = parseFloat(issuer.memoryMB) || 0
+      const ramV = parseFloat(verifier.memoryMB) || 0
+      serverCpu = Math.max(cpuI, cpuV, 2.0) // min 2% when active
+      serverRam = ramI + ramV
+      verifierTimeMs = verifier.lastVerifyTiming?.verifyTimeMs || 0
+    } catch (e) { /* fallback values used */ }
+
+    // Record real-time telemetry
+    telemetry.setMetrics({
+      proverTime: Math.round(bbsTime + zkSnarkTime) + 'ms',
+      verifierTime: verifierTimeMs > 0 ? verifierTimeMs + 'ms' : Math.round(bbsTime * 0.15) + 'ms',
+      proofSize: proofSizeKB + 'KB',
+      latency: Math.round(endToEndMs) + 'ms',
+      cpuUsage: serverCpu.toFixed(1),
+      ramUsage: serverRam.toFixed(1),
+      proofGeneratedBy: vc?.type?.find(t => t !== 'VerifiableCredential')?.replace('Credential', '')?.replace(/([A-Z])/g, ' $1')?.trim() || 'Unknown Card',
+      proofType: Object.keys(zkProofsLocal).length > 0 ? `BBS+ + zk-SNARK (PLONK × ${Object.keys(zkProofsLocal).length})` : 'BBS+ Only'
+    })
+=======
       // Calculate accurate proof type string
       const numAttributesLocal = (effectiveRequest.requested_attributes || []).length
       const numZkLocal = Object.keys(zkProofsLocal).length
@@ -767,25 +802,26 @@ const Verifier = () => {
         proofGeneratedBy: vc?.type?.find(t => t !== 'VerifiableCredential')?.replace('Credential', '')?.replace(/([A-Z])/g, ' $1')?.trim() || 'Unknown Card',
         proofType: proofTypeStrLocal
       })
+>>>>>>> 4c2a3c5f9470bac4758d2bcca975ccf699f13eb3
 
-      setProofData(proof)
-      setStatus('success')
+    setProofData(proof)
+    setStatus('success')
 
-    } catch (err) {
-      console.error("BBS ERROR:", err)
-      addLog("Proof generation failed ❌", "error")
-      setMessageBox({
-        isOpen: true,
-        type: "error",
-        title: "Proof Generation Failed",
-        message:
-          "The proof could not be generated or sent to the verifier. Please check your credential selection or try again.",
-        onConfirm: () =>
-          setMessageBox(prev => ({ ...prev, isOpen: false }))
-      });
-      addLog(err.message || "Unknown error")
-    }
+  } catch (err) {
+    console.error("BBS ERROR:", err)
+    addLog("Proof generation failed ❌", "error")
+    setMessageBox({
+      isOpen: true,
+      type: "error",
+      title: "Proof Generation Failed",
+      message:
+        "The proof could not be generated or sent to the verifier. Please check your credential selection or try again.",
+      onConfirm: () =>
+        setMessageBox(prev => ({ ...prev, isOpen: false }))
+    });
+    addLog(err.message || "Unknown error")
   }
+}
 
   const startVerification = async () => {
     try {
@@ -1053,7 +1089,7 @@ const Verifier = () => {
                     <motion.div
                       key={field.name}
                       layout
-                      className="bg-slate-900/50 border border-slate-800 rounded-xl p-4 overflow-hidden"
+                      className="bg-slate-900/50 border border-slate-800 rounded-xl p-4"
                     >
                       {/* Header */}
                       <div className="flex items-center justify-between mb-2">
@@ -1108,18 +1144,58 @@ const Verifier = () => {
 
                               {/* Input if required */}
                               {info.requiresInput && (
-                                <input
-                                  type={info.inputType === "numeric" ? "number" : "text"}
-                                  value={predicateInputs[selected] || ""}
-                                  onChange={(e) => {
-                                    setPredicateInputs((prev) => ({
-                                      ...prev,
-                                      [selected]: e.target.value
-                                    }))
-                                  }}
-                                  placeholder={info.inputType === "numeric" ? "Enter minimum age" : "Enter value"}
-                                  className="mt-1 w-full bg-slate-800 text-white rounded px-2 py-1 text-[10px]"
-                                />
+                                field.options ? (
+                                  <div className="relative mt-1 text-[10px]">
+                                    <div
+                                      onClick={() => setActiveDropdown(activeDropdown === selected ? null : selected)}
+                                      className={`w-full bg-[#0B101B] border rounded-xl py-2 px-3 text-slate-200 cursor-pointer flex justify-between items-center font-bold transition-all ${activeDropdown === selected ? 'border-orange-500/50' : 'border-slate-700 hover:border-orange-500/30'}`}
+                                    >
+                                      <span>{predicateInputs[selected] || `Select ${field.label}`}</span>
+                                      <ChevronDown size={14} className={`transition-transform ${activeDropdown === selected ? 'rotate-180 text-orange-400' : 'text-slate-600'}`} />
+                                    </div>
+                                    <AnimatePresence>
+                                      {activeDropdown === selected && (
+                                        <motion.div
+                                          initial={{ opacity: 0, y: 5 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          exit={{ opacity: 0, y: 5 }}
+                                          className="absolute w-full mt-2 bg-[#0F1623] border border-slate-700 rounded-xl shadow-2xl z-[60] overflow-hidden"
+                                        >
+                                          <div className="max-h-60 overflow-y-auto">
+                                            {field.options.map((opt) => (
+                                              <div
+                                                key={opt}
+                                                onClick={() => {
+                                                  setPredicateInputs((prev) => ({
+                                                    ...prev,
+                                                    [selected]: opt
+                                                  }));
+                                                  setActiveDropdown(null);
+                                                }}
+                                                className="px-4 py-3 hover:bg-orange-500/20 text-slate-300 hover:text-orange-400 cursor-pointer border-b border-slate-800/50 flex items-center gap-2 font-bold transition-colors"
+                                              >
+                                                {opt}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+                                  </div>
+                                ) : (
+                                  <input
+                                    type={info.inputType === "numeric" ? "number" : "text"}
+                                    value={predicateInputs[selected] || ""}
+                                    onChange={(e) => {
+                                      setPredicateInputs((prev) => ({
+                                        ...prev,
+                                        [selected]: e.target.value
+                                      }))
+                                    }}
+                                    placeholder={info.inputType === "numeric" ? "Enter minimum age" : "Enter value"}
+                                    className="mt-1 w-full bg-slate-800 text-white rounded px-2 py-1 text-[10px]"
+                                  />
+                                )
                               )}
                             </div>
                           );
@@ -1202,32 +1278,27 @@ const Verifier = () => {
           </motion.div>
         )}
 
-
         {/* STEP 4: UNIVERSAL VERIFIER */}
         {step === 4 && (
           qrLink ? (
             <div className="flex flex-col items-center justify-center p-10">
-              <h3 className="text-white font-black mb-6">
-                Scan to Verify
-              </h3>
-
-              {/* <div className="relative p-[6px] rounded-2xl bg-gradient-to-r from-orange-500 to-cyan-500 animate-pulse"> */}
+              <h3 className="text-white font-black mb-6">Scan to Verify</h3>
               <div className="relative p-[6px] rounded-2xl bg-gradient-to-r from-orange-500 to-cyan-500">
                 <div className="bg-white rounded-xl p-4">
                   <QRCodeCanvas value={qrLink} size={260} />
                 </div>
               </div>
-
-              {/* 👇 NEW BUTTON TO GO BACK TO THE FORM */}
               <button
+<<<<<<< HEAD
+                onClick={() => setQrLink(null)}
+=======
                 onClick={() => { setQrLink(null); telemetry.clearHistory(); }}
+>>>>>>> 4c2a3c5f9470bac4758d2bcca975ccf699f13eb3
                 className="mt-10 mb-10 px-6 py-3 bg-slate-800/50 border border-slate-700 hover:border-orange-500 rounded-xl font-bold text-slate-300 hover:text-orange-400 text-[10px] uppercase tracking-[2px] transition-all flex items-center gap-2 group"
               >
                 <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                 New Request
               </button>
-
-              {/* 👇 THIS is correct now */}
               <VerificationResults requestId={activeRequestId} />
             </div>
           ) : (
@@ -1237,11 +1308,7 @@ const Verifier = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
             >
-              {/* BACK BUTTON */}
-              <button
-                onClick={() => setStep(0)}
-                className="flex items-center gap-2 mb-6 group"
-              >
+              <button onClick={() => setStep(0)} className="flex items-center gap-2 mb-6 group">
                 <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-all">
                   <ChevronLeft size={16} />
                 </div>
@@ -1251,11 +1318,7 @@ const Verifier = () => {
               </button>
 
               <div className="bg-[#0B101B] border border-slate-800 rounded-3xl p-6">
-                <h3 className="text-white font-black mb-6">
-                  Verifier — Select Predicates
-                </h3>
-
-                {/* search option */}
+                <h3 className="text-white font-black mb-6">Verifier — Select Predicates</h3>
                 <div className="flex gap-2 mb-6">
                   <input
                     type="text"
@@ -1265,25 +1328,83 @@ const Verifier = () => {
                     className="flex-1 bg-slate-800 text-white rounded px-3 py-2 text-sm"
                   />
                 </div>
-
                 <div className="space-y-4 mb-8">
-
-                  {filteredFields.map((field) => {
-
-                    return (
-                      <motion.div
-                        key={field.name}
-                        layout
-                        className="bg-slate-900/50 border border-slate-800 rounded-xl p-4 overflow-hidden"
-                      >
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            {field.icon && <field.icon size={16} className="text-orange-400" />}
-                            <span className="text-[10px] font-bold text-slate-300 uppercase">
-                              {field.label}
-                            </span>
+                  {filteredFields.map((field) => (
+                    <motion.div key={field.name} layout className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {field.icon && <field.icon size={16} className="text-orange-400" />}
+                          <span className="text-[10px] font-bold text-slate-300 uppercase">{field.label}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {field.predicates?.map((pred) => (
+                          <button
+                            key={pred}
+                            onClick={() =>
+                              setVerifierSelections((prev) =>
+                                prev.includes(`${field.name}:${pred}`)
+                                  ? prev.filter((x) => x !== `${field.name}:${pred}`)
+                                  : [...prev, `${field.name}:${pred}`]
+                              )
+                            }
+                            className={`px-2 py-1 text-[9px] font-bold rounded-md border transition-all ${verifierSelections.includes(`${field.name}:${pred}`) ? "bg-orange-500/20 border-orange-500 text-orange-400" : "bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700"}`}
+                          >
+                            {pred}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {verifierSelections.filter((x) => x.startsWith(`${field.name}:`)).map((selected) => {
+                        const pred = selected.split(':')[1];
+                        const info = predicateInfo[pred] || {};
+                        return (
+                          <div key={selected} className="mt-2 transition-all duration-300 ease-in-out">
+                            <span className="inline-block bg-slate-700 text-orange-400 text-[8px] px-2 py-0.5 rounded uppercase mb-1">{pred}</span>
+                            <p className="text-[9px] text-slate-400 italic">{info.message}</p>
+                            {info.requiresInput && (
+                              field.options ? (
+                                <div className="relative mt-1 text-[10px]">
+                                  <div onClick={() => setActiveDropdown(activeDropdown === selected ? null : selected)} className={`w-full bg-[#0B101B] border rounded-xl py-2 px-3 text-slate-200 cursor-pointer flex justify-between items-center font-bold transition-all ${activeDropdown === selected ? 'border-orange-500/50' : 'border-slate-700 hover:border-orange-500/30'}`}>
+                                    <span>{predicateInputs[selected] || `Select ${field.label}`}</span>
+                                    <ChevronDown size={14} className={`transition-transform ${activeDropdown === selected ? 'rotate-180 text-orange-400' : 'text-slate-600'}`} />
+                                  </div>
+                                  <AnimatePresence>
+                                    {activeDropdown === selected && (
+                                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="absolute w-full mt-2 bg-[#0F1623] border border-slate-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
+                                        <div className="max-h-60 overflow-y-auto">
+                                          {field.options.map((opt) => (
+                                            <div key={opt} onClick={() => { setPredicateInputs((prev) => ({ ...prev, [selected]: opt })); setActiveDropdown(null); }} className="px-4 py-3 hover:bg-orange-500/20 text-slate-300 hover:text-orange-400 cursor-pointer border-b border-slate-800/50 flex items-center gap-2 font-bold transition-colors">
+                                              {opt}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+                              ) : (
+                                <input
+                                  type={info.inputType === "date" ? "date" : info.inputType === "numeric" ? "number" : "text"}
+                                  value={predicateInputs[selected] || ""}
+                                  onChange={(e) => {
+                                    let value = e.target.value;
+                                    if (info.inputType === "numeric" && !/^\d*$/.test(value)) return;
+                                    if (info.inputType === "hash") value = value.replace(/[^0-9a-fA-F]/g, "");
+                                    setPredicateInputs((prev) => ({ ...prev, [selected]: value }));
+                                  }}
+                                  placeholder={info.inputType === "numeric" ? "Enter minimum age" : info.inputType === "hash" ? "Enter hex hash" : info.inputType === "date" ? "Select date" : "Enter value"}
+                                  className="mt-1 w-full bg-slate-800 text-white rounded px-2 py-1 text-[10px]"
+                                />
+                              )
+                            )}
                           </div>
+<<<<<<< HEAD
+                        );
+                      })}
+                    </motion.div>
+                  ))}
+=======
                         </div>
 
                         {/* Predicates */}
@@ -1370,8 +1491,8 @@ const Verifier = () => {
                     )
                   })}
 
+>>>>>>> 4c2a3c5f9470bac4758d2bcca975ccf699f13eb3
                 </div>
-
                 <button
                   onClick={startVerification}
                   disabled={!isVerifyValid}
@@ -1379,13 +1500,11 @@ const Verifier = () => {
                 >
                   Build Verification Policy
                 </button>
-
               </div>
             </motion.div>
           )
         )}
       </AnimatePresence>
-
       <CredentialSelectorModal
         isOpen={showSelector}
         request={requestForModal}
@@ -1393,12 +1512,9 @@ const Verifier = () => {
         onConfirm={handleMappingConfirm}
         onClose={() => setShowSelector(false)}
       />
-
-      <MessageBox
-        {...messageBox}
-      />
+      <MessageBox {...messageBox} />
     </div>
-
   );
 };
+
 export default Verifier;

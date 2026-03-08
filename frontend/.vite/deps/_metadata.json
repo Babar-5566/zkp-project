@@ -1,8 +1,85 @@
 {
+<<<<<<< HEAD
+  "hash": "30d1d1bb",
+  "configHash": "ce2d8590",
+  "lockfileHash": "6b3bc79d",
+  "browserHash": "320ea615",
+  "optimized": {
+    "process": {
+      "src": "../../node_modules/process/browser.js",
+      "file": "process.js",
+      "fileHash": "8539792e",
+      "needsInterop": true
+    },
+    "buffer": {
+      "src": "../../node_modules/buffer/index.js",
+      "file": "buffer.js",
+      "fileHash": "ca0e3c5b",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "0e0ea782",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "ea6132bb",
+      "needsInterop": true
+    },
+    "framer-motion": {
+      "src": "../../node_modules/framer-motion/dist/es/index.mjs",
+      "file": "framer-motion.js",
+      "fileHash": "57f76c08",
+      "needsInterop": false
+    },
+    "lucide-react": {
+      "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
+      "file": "lucide-react.js",
+      "fileHash": "e9ea1366",
+      "needsInterop": false
+    },
+    "qrcode.react": {
+      "src": "../../node_modules/qrcode.react/lib/esm/index.js",
+      "file": "qrcode__react.js",
+      "fileHash": "1c77a033",
+      "needsInterop": false
+    },
+    "@mattrglobal/bbs-signatures": {
+      "src": "../../node_modules/@mattrglobal/bbs-signatures/lib/index.js",
+      "file": "@mattrglobal_bbs-signatures.js",
+      "fileHash": "e4a3dd22",
+      "needsInterop": true
+    },
+    "snarkjs": {
+      "src": "../../node_modules/snarkjs/build/browser.esm.js",
+      "file": "snarkjs.js",
+      "fileHash": "356304d3",
+      "needsInterop": false
+    },
+    "html5-qrcode": {
+      "src": "../../node_modules/html5-qrcode/esm/index.js",
+      "file": "html5-qrcode.js",
+      "fileHash": "13978489",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-5C6DFZPZ": {
+      "file": "chunk-5C6DFZPZ.js"
+    },
+    "chunk-PR4QN5HX": {
+      "file": "chunk-PR4QN5HX.js"
+    }
+  }
+=======
   "hash": "cdeed9b1",
   "configHash": "3c934706",
   "lockfileHash": "6b3bc79d",
   "browserHash": "67df9898",
   "optimized": {},
   "chunks": {}
+>>>>>>> 4c2a3c5f9470bac4758d2bcca975ccf699f13eb3
 }
