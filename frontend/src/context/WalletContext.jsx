@@ -124,7 +124,7 @@ export const WalletProvider = ({ children }) => {
       data: {
         ...formData,
         issuer: "Govt. of India",
-        holderCommitment, 
+        holderCommitment,
         ...(formData.idType === "Passport" && { nationality: "India" }) // force nationality
       }
     };
@@ -138,7 +138,7 @@ export const WalletProvider = ({ children }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": "zkp-issuer-secret-key-2026"
+          "x-api-key": "password@govtIndia@ciphertrust"
         },
         body: JSON.stringify(payload)
       });

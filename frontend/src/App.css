@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -11,9 +15,11 @@
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -22,6 +28,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -39,4 +46,109 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* --- 1. GLOBAL RESET & FONT --- */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #020617;
+  /* Deepest Dark Blue/Black */
+  color: #f8fafc;
+  /* Slate-50 Text */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  /* Prevent horizontal scroll */
+  -webkit-font-smoothing: antialiased;
+  /* Smoother fonts on Mac */
+}
+
+/* --- 2. CUSTOM TECH SCROLLBAR --- */
+/* (This makes the scrollbar look like a part of the UI) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  /* Slate-800 */
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #06b6d4;
+  /* Cyan-500 Hover Effect */
+}
+
+/* --- 3. UTILITY: HIDE SCROLLBAR --- */
+/* (Used in Verifier Terminal logs) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+/* --- 4. ANIMATION UTILITIES --- */
+
+/* Pop-up animation for verification list panels */
+@keyframes popUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.88) translateY(20px);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(1.015) translateY(-2px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Slide-in animation for individual user cards */
+@keyframes cardSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.01);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-pop-up {
+  animation: popUp 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-card-slide-in {
+  animation: cardSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 0;
+}
+
+/* Smooth text selection color */
+::selection {
+  background-color: rgba(6, 182, 212, 0.3);
+  /* Cyan tint */
+  color: white;
 }

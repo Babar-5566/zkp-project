@@ -154,7 +154,7 @@ app.get("/metrics", (req, res) => {
 app.post("/verify", async (req, res) => {
   const verifyStart = Date.now();
   try {
-    console.log(req.body.messages);
+    // console.log(req.body.messages);
 
     const { id, nonce, proofs, nullifier, zkProof, zkProofs, verificationFailed, failureReason, revocationIndex, proverTimeMs, proofSizeBytes: clientProofSize, e2eMs, proofType: clientProofType } = req.body;
 
