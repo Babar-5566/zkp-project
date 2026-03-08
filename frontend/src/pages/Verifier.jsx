@@ -14,16 +14,8 @@ import {
   generateRangeProof,
   generateYearProof,
   generateDateProof,
-<<<<<<< HEAD
-  generateHashProof,
-  generateSetMembershipProof,
-  generateStringMatchProof,
-  generateCrossFieldProof,
-  extractLocation
-=======
   generateSetMembershipProof,
   generateStringMatchProof
->>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
 } from "../utils/plonkProver";
 import { useTelemetry } from '../context/TelemetryContext';
 import { getAllSchemaFields } from "../utils/schema";
@@ -268,11 +260,7 @@ const Verifier = () => {
       let zkFailed = false
       const currentRequest = proofRequest.proofRequest ?? proofRequest
       const grothPredicates = (currentRequest.requested_predicates || []).filter(
-<<<<<<< HEAD
-        p => ['numeric/range', 'equality', 'date comparison', 'hash', 'set membership', 'string match', 'cross-field', 'extract location'].includes(p.predicate)
-=======
         p => ['numeric/range', 'equality', 'date comparison', 'set membership', 'string match'].includes(p.predicate)
->>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
       )
 
       for (const pred of grothPredicates) {
@@ -310,13 +298,6 @@ const Verifier = () => {
             addLog(`Generating PLONK proof (date: ${pred.name})...`)
             zkProofs[`date_${pred.name}`] = await generateDateProof(fieldVal, pred.value)
             addLog(`Date proof for ${pred.name} generated ✅`, 'success')
-<<<<<<< HEAD
-          } else if (pred.predicate === 'hash') {
-            addLog(`Generating PLONK proof (hash: ${pred.name})...`)
-            zkProofs[`hash_${pred.name}`] = await generateHashProof(fieldVal, pred.value)
-            addLog(`Hash proof for ${pred.name} generated ✅`, 'success')
-=======
->>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
           } else if (pred.predicate === 'set membership') {
             addLog(`Generating PLONK proof (set membership: ${pred.name})...`)
             const allowedValues = (pred.value || '').split(',').map(v => v.trim()).filter(Boolean)
@@ -326,20 +307,7 @@ const Verifier = () => {
             addLog(`Generating PLONK proof (string match: ${pred.name})...`)
             zkProofs[`strmatch_${pred.name}`] = await generateStringMatchProof(fieldVal, pred.value)
             addLog(`String match proof for ${pred.name} generated ✅`, 'success')
-<<<<<<< HEAD
-          } else if (pred.predicate === 'cross-field') {
-            addLog(`Generating PLONK proof (cross-field: ${pred.name})...`)
-            const marksVal = vc?.credentialSubject?.marks
-            const yearVal = vc?.credentialSubject?.passingYear
-            zkProofs[`crossfield_${pred.name}`] = await generateCrossFieldProof(marksVal, yearVal, pred.value)
-            addLog(`Cross-field proof for ${pred.name} generated ✅`, 'success')
-          } else if (pred.predicate === 'extract location') {
-            const location = extractLocation(fieldVal)
-            addLog(`📍 Extracted location: city=${location.city}, state=${location.state}`, 'success')
           }
-=======
-          } 
->>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
         } catch (zkErr) {
           addLog(`zk-SNARK proof for ${pred.name}:${pred.predicate} failed ❌`, 'error')
           addLog(zkErr.message || 'Unknown zk-SNARK error')
@@ -574,11 +542,7 @@ const Verifier = () => {
       const zkProofsLocal = {}
       let zkFailedLocal = false
       const grothPredsLocal = (effectiveRequest.requested_predicates || []).filter(
-<<<<<<< HEAD
-        p => ['numeric/range', 'equality', 'date comparison', 'hash', 'set membership', 'string match', 'cross-field', 'extract location'].includes(p.predicate)
-=======
         p => ['numeric/range', 'equality', 'date comparison', 'set membership', 'string match'].includes(p.predicate)
->>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
       )
 
       for (const pred of grothPredsLocal) {
@@ -629,27 +593,12 @@ const Verifier = () => {
             zkProofsLocal[`date_${pred.name}`] = await generateDateProof(fieldVal, pred.value)
             zkSnarkTime += performance.now() - zkStart
             addLog(`Date proof for ${pred.name} generated ✅`, 'success')
-<<<<<<< HEAD
-          } else if (pred.predicate === 'hash') {
-            addLog(`Generating PLONK proof (hash: ${pred.name})...`)
-=======
-          } else if (pred.predicate === 'set membership') {
-            addLog(`Generating PLONK proof (set membership: ${pred.name})...`)
-            const allowedValues = (pred.value || '').split(',').map(v => v.trim()).filter(Boolean)
->>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
-            const zkStart = performance.now()
-            zkProofsLocal[`setmem_${pred.name}`] = await generateSetMembershipProof(pred.name, fieldVal, allowedValues)
-            zkSnarkTime += performance.now() - zkStart
-<<<<<<< HEAD
-            addLog(`Hash proof for ${pred.name} generated ✅`, 'success')
           } else if (pred.predicate === 'set membership') {
             addLog(`Generating PLONK proof (set membership: ${pred.name})...`)
             const allowedValues = (pred.value || '').split(',').map(v => v.trim()).filter(Boolean)
             const zkStart = performance.now()
             zkProofsLocal[`setmem_${pred.name}`] = await generateSetMembershipProof(pred.name, fieldVal, allowedValues)
             zkSnarkTime += performance.now() - zkStart
-=======
->>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
             addLog(`Set membership proof for ${pred.name} generated ✅`, 'success')
           } else if (pred.predicate === 'string match') {
             addLog(`Generating PLONK proof (string match: ${pred.name})...`)
@@ -657,20 +606,6 @@ const Verifier = () => {
             zkProofsLocal[`strmatch_${pred.name}`] = await generateStringMatchProof(fieldVal, pred.value)
             zkSnarkTime += performance.now() - zkStart
             addLog(`String match proof for ${pred.name} generated ✅`, 'success')
-<<<<<<< HEAD
-          } else if (pred.predicate === 'cross-field') {
-            addLog(`Generating PLONK proof (cross-field: ${pred.name})...`)
-            const marksVal = vc?.credentialSubject?.marks || effectiveMapping[pred.name]?.credentialSubject?.marks
-            const yearVal = vc?.credentialSubject?.passingYear || effectiveMapping[pred.name]?.credentialSubject?.passingYear
-            const zkStart = performance.now()
-            zkProofsLocal[`crossfield_${pred.name}`] = await generateCrossFieldProof(marksVal, yearVal, pred.value)
-            zkSnarkTime += performance.now() - zkStart
-            addLog(`Cross-field proof for ${pred.name} generated ✅`, 'success')
-          } else if (pred.predicate === 'extract location') {
-            const location = extractLocation(fieldVal)
-            addLog(`📍 Extracted location: city=${location.city}, state=${location.state}`, 'success')
-=======
->>>>>>> 75958d5c34da7eda1d04fb0c3382619e3800612a
           }
         } catch (zkE) {
           addLog(`zk-SNARK proof for ${pred.name}:${pred.predicate} failed ❌`, 'error')
@@ -723,50 +658,16 @@ const Verifier = () => {
         return
       }
 
-    await new Promise(r => setTimeout(r, 800))
+      await new Promise(r => setTimeout(r, 800))
 
-    addLog("Proof generated successfully ✅", "success")
+      addLog("Proof generated successfully ✅", "success")
 
-<<<<<<< HEAD
-    // Calculate proof size
-    const proofSizeBytes = JSON.stringify(proof).length + (zkProofResult ? JSON.stringify(zkProofResult).length : 0)
-    const proofSizeKB = (proofSizeBytes / 1024).toFixed(1)
-=======
       // Calculate proof size
       const proofSizeBytes = JSON.stringify(proof).length + (Object.keys(zkProofsLocal).length > 0 ? JSON.stringify(zkProofsLocal).length : 0)
       const proofSizeKB = (proofSizeBytes / 1024).toFixed(1)
->>>>>>> 4c2a3c5f9470bac4758d2bcca975ccf699f13eb3
 
-    const endToEndMs = performance.now() - e2eStart
+      const endToEndMs = performance.now() - e2eStart
 
-<<<<<<< HEAD
-    // Collect the server metrics that were fetched concurrently
-    let serverCpu = 2.5, serverRam = 45, verifierTimeMs = 0
-    try {
-      const results = await metricsPromise
-      const issuer = results[0]?.status === 'fulfilled' ? results[0].value : {}
-      const verifier = results[1]?.status === 'fulfilled' ? results[1].value : {}
-      const cpuI = parseFloat(issuer.cpuPercent) || 0
-      const cpuV = parseFloat(verifier.cpuPercent) || 0
-      const ramI = parseFloat(issuer.memoryMB) || 0
-      const ramV = parseFloat(verifier.memoryMB) || 0
-      serverCpu = Math.max(cpuI, cpuV, 2.0) // min 2% when active
-      serverRam = ramI + ramV
-      verifierTimeMs = verifier.lastVerifyTiming?.verifyTimeMs || 0
-    } catch (e) { /* fallback values used */ }
-
-    // Record real-time telemetry
-    telemetry.setMetrics({
-      proverTime: Math.round(bbsTime + zkSnarkTime) + 'ms',
-      verifierTime: verifierTimeMs > 0 ? verifierTimeMs + 'ms' : Math.round(bbsTime * 0.15) + 'ms',
-      proofSize: proofSizeKB + 'KB',
-      latency: Math.round(endToEndMs) + 'ms',
-      cpuUsage: serverCpu.toFixed(1),
-      ramUsage: serverRam.toFixed(1),
-      proofGeneratedBy: vc?.type?.find(t => t !== 'VerifiableCredential')?.replace('Credential', '')?.replace(/([A-Z])/g, ' $1')?.trim() || 'Unknown Card',
-      proofType: Object.keys(zkProofsLocal).length > 0 ? `BBS+ + zk-SNARK (PLONK × ${Object.keys(zkProofsLocal).length})` : 'BBS+ Only'
-    })
-=======
       // Calculate accurate proof type string
       const numAttributesLocal = (effectiveRequest.requested_attributes || []).length
       const numZkLocal = Object.keys(zkProofsLocal).length
@@ -802,7 +703,6 @@ const Verifier = () => {
         proofGeneratedBy: vc?.type?.find(t => t !== 'VerifiableCredential')?.replace('Credential', '')?.replace(/([A-Z])/g, ' $1')?.trim() || 'Unknown Card',
         proofType: proofTypeStrLocal
       })
->>>>>>> 4c2a3c5f9470bac4758d2bcca975ccf699f13eb3
 
     setProofData(proof)
     setStatus('success')
@@ -1289,11 +1189,7 @@ const Verifier = () => {
                 </div>
               </div>
               <button
-<<<<<<< HEAD
-                onClick={() => setQrLink(null)}
-=======
                 onClick={() => { setQrLink(null); telemetry.clearHistory(); }}
->>>>>>> 4c2a3c5f9470bac4758d2bcca975ccf699f13eb3
                 className="mt-10 mb-10 px-6 py-3 bg-slate-800/50 border border-slate-700 hover:border-orange-500 rounded-xl font-bold text-slate-300 hover:text-orange-400 text-[10px] uppercase tracking-[2px] transition-all flex items-center gap-2 group"
               >
                 <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
@@ -1337,6 +1233,8 @@ const Verifier = () => {
                           <span className="text-[10px] font-bold text-slate-300 uppercase">{field.label}</span>
                         </div>
                       </div>
+
+                      {/* Predicates */}
                       <div className="flex flex-wrap gap-2">
                         {field.predicates?.map((pred) => (
                           <button
@@ -1348,108 +1246,58 @@ const Verifier = () => {
                                   : [...prev, `${field.name}:${pred}`]
                               )
                             }
-                            className={`px-2 py-1 text-[9px] font-bold rounded-md border transition-all ${verifierSelections.includes(`${field.name}:${pred}`) ? "bg-orange-500/20 border-orange-500 text-orange-400" : "bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700"}`}
+                            className={`px-2 py-1 text-[9px] font-bold rounded-md border transition-all ${verifierSelections.includes(`${field.name}:${pred}`)
+                              ? "bg-orange-500/20 border-orange-500 text-orange-400"
+                              : "bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700"
+                              }`}
                           >
                             {pred}
                           </button>
                         ))}
                       </div>
-                      
-                      {verifierSelections.filter((x) => x.startsWith(`${field.name}:`)).map((selected) => {
-                        const pred = selected.split(':')[1];
-                        const info = predicateInfo[pred] || {};
-                        return (
-                          <div key={selected} className="mt-2 transition-all duration-300 ease-in-out">
-                            <span className="inline-block bg-slate-700 text-orange-400 text-[8px] px-2 py-0.5 rounded uppercase mb-1">{pred}</span>
-                            <p className="text-[9px] text-slate-400 italic">{info.message}</p>
-                            {info.requiresInput && (
-                              field.options ? (
-                                <div className="relative mt-1 text-[10px]">
-                                  <div onClick={() => setActiveDropdown(activeDropdown === selected ? null : selected)} className={`w-full bg-[#0B101B] border rounded-xl py-2 px-3 text-slate-200 cursor-pointer flex justify-between items-center font-bold transition-all ${activeDropdown === selected ? 'border-orange-500/50' : 'border-slate-700 hover:border-orange-500/30'}`}>
-                                    <span>{predicateInputs[selected] || `Select ${field.label}`}</span>
-                                    <ChevronDown size={14} className={`transition-transform ${activeDropdown === selected ? 'rotate-180 text-orange-400' : 'text-slate-600'}`} />
-                                  </div>
-                                  <AnimatePresence>
-                                    {activeDropdown === selected && (
-                                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="absolute w-full mt-2 bg-[#0F1623] border border-slate-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
-                                        <div className="max-h-60 overflow-y-auto">
-                                          {field.options.map((opt) => (
-                                            <div key={opt} onClick={() => { setPredicateInputs((prev) => ({ ...prev, [selected]: opt })); setActiveDropdown(null); }} className="px-4 py-3 hover:bg-orange-500/20 text-slate-300 hover:text-orange-400 cursor-pointer border-b border-slate-800/50 flex items-center gap-2 font-bold transition-colors">
-                                              {opt}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </motion.div>
-                                    )}
-                                  </AnimatePresence>
-                                </div>
-                              ) : (
-                                <input
-                                  type={info.inputType === "date" ? "date" : info.inputType === "numeric" ? "number" : "text"}
-                                  value={predicateInputs[selected] || ""}
-                                  onChange={(e) => {
-                                    let value = e.target.value;
-                                    if (info.inputType === "numeric" && !/^\d*$/.test(value)) return;
-                                    if (info.inputType === "hash") value = value.replace(/[^0-9a-fA-F]/g, "");
-                                    setPredicateInputs((prev) => ({ ...prev, [selected]: value }));
-                                  }}
-                                  placeholder={info.inputType === "numeric" ? "Enter minimum age" : info.inputType === "hash" ? "Enter hex hash" : info.inputType === "date" ? "Select date" : "Enter value"}
-                                  className="mt-1 w-full bg-slate-800 text-white rounded px-2 py-1 text-[10px]"
-                                />
-                              )
-                            )}
-                          </div>
-<<<<<<< HEAD
-                        );
-                      })}
-                    </motion.div>
-                  ))}
-=======
-                        </div>
 
-                        {/* Predicates */}
-                        <div className="flex flex-wrap gap-2">
-                          {field.predicates?.map((pred) => (
-                            <button
-                              key={pred}
-                              onClick={() =>
-                                setVerifierSelections((prev) =>
-                                  prev.includes(`${field.name}:${pred}`)
-                                    ? prev.filter((x) => x !== `${field.name}:${pred}`)
-                                    : [...prev, `${field.name}:${pred}`]
-                                )
-                              }
-                              className={`px-2 py-1 text-[9px] font-bold rounded-md border transition-all ${verifierSelections.includes(`${field.name}:${pred}`)
-                                ? "bg-orange-500/20 border-orange-500 text-orange-400"
-                                : "bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700"
-                                }`}
+                      {/* INFO PANEL */}
+                      {verifierSelections
+                        .filter((x) => x.startsWith(`${field.name}:`))
+                        .map((selected) => {
+                          const pred = selected.split(':')[1]
+                          const info = predicateInfo[pred] || {}
+
+                          return (
+                            <div
+                              key={selected}
+                              className="mt-2 transition-all duration-300 ease-in-out"
                             >
-                              {pred}
-                            </button>
-                          ))}
-                        </div>
+                              <span className="inline-block bg-slate-700 text-orange-400 text-[8px] px-2 py-0.5 rounded uppercase mb-1">
+                                {pred}
+                              </span>
 
-                        {/* INFO PANEL — SAME BEHAVIOR */}
-                        {verifierSelections
-                          .filter((x) => x.startsWith(`${field.name}:`))
-                          .map((selected) => {
-                            const pred = selected.split(':')[1]
-                            const info = predicateInfo[pred] || {}
+                              <p className="text-[9px] text-slate-400 italic">
+                                {info.message}
+                              </p>
 
-                            return (
-                              <div
-                                key={selected}
-                                className="mt-2 transition-all duration-300 ease-in-out"
-                              >
-                                <span className="inline-block bg-slate-700 text-orange-400 text-[8px] px-2 py-0.5 rounded uppercase mb-1">
-                                  {pred}
-                                </span>
-
-                                <p className="text-[9px] text-slate-400 italic">
-                                  {info.message}
-                                </p>
-
-                                {info.requiresInput && (
+                              {info.requiresInput && (
+                                field.options ? (
+                                  <div className="relative mt-1 text-[10px]">
+                                    <div onClick={() => setActiveDropdown(activeDropdown === selected ? null : selected)} className={`w-full bg-[#0B101B] border rounded-xl py-2 px-3 text-slate-200 cursor-pointer flex justify-between items-center font-bold transition-all ${activeDropdown === selected ? 'border-orange-500/50' : 'border-slate-700 hover:border-orange-500/30'}`}>
+                                      <span>{predicateInputs[selected] || `Select ${field.label}`}</span>
+                                      <ChevronDown size={14} className={`transition-transform ${activeDropdown === selected ? 'rotate-180 text-orange-400' : 'text-slate-600'}`} />
+                                    </div>
+                                    <AnimatePresence>
+                                      {activeDropdown === selected && (
+                                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="absolute w-full mt-2 bg-[#0F1623] border border-slate-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
+                                          <div className="max-h-60 overflow-y-auto">
+                                            {field.options.map((opt) => (
+                                              <div key={opt} onClick={() => { setPredicateInputs((prev) => ({ ...prev, [selected]: opt })); setActiveDropdown(null); }} className="px-4 py-3 hover:bg-orange-500/20 text-slate-300 hover:text-orange-400 cursor-pointer border-b border-slate-800/50 flex items-center gap-2 font-bold transition-colors">
+                                                {opt}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+                                  </div>
+                                ) : (
                                   <input
                                     type={
                                       info.inputType === "date"
@@ -1482,16 +1330,15 @@ const Verifier = () => {
                                     }
                                     className="mt-1 w-full bg-slate-800 text-white rounded px-2 py-1 text-[10px]"
                                   />
-                                )}
-                              </div>
-                            )
-                          })}
+                                )
+                              )}
+                            </div>
+                          )
+                        })}
 
-                      </motion.div>
-                    )
-                  })}
+                    </motion.div>
+                  ))}
 
->>>>>>> 4c2a3c5f9470bac4758d2bcca975ccf699f13eb3
                 </div>
                 <button
                   onClick={startVerification}
