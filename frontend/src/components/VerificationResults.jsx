@@ -11,6 +11,12 @@ const VerificationResults = ({ requestId, onExpired }) => {
   // Per-view search (resets when switching views)
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Reset search when switching views
+  const switchView = (view) => {
+    setActiveView(view);
+    setSearchQuery("");
+  };
+
   // 🔄 Polling
   useEffect(() => {
     if (!requestId) return;
@@ -56,12 +62,6 @@ const VerificationResults = ({ requestId, onExpired }) => {
     return () => clearInterval(interval);
   }, [requestId, onExpired]);
 
-  // Reset search when switching views
-  const switchView = (view) => {
-    setActiveView(view);
-    setSearchQuery("");
-  };
-
   // ✅ SEARCH LOGIC — compute matched items for the active list
   const hasSearch = searchQuery.trim().length > 0;
 
@@ -75,6 +75,7 @@ const VerificationResults = ({ requestId, onExpired }) => {
     );
   }, [searchQuery, activeList, hasSearch]);
 
+  // ── No request yet ──
   if (!requestId) {
     return (
       <div className="mt-8 bg-[#0B101B] border border-slate-800 rounded-2xl p-6">
