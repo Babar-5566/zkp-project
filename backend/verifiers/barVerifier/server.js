@@ -142,7 +142,7 @@ app.post("/verify", async (req, res) => {
   try {
     console.log(req.body.messages);
 
-    const { id, nonce, proofs, nullifier, zkProof, zkProofs, verificationFailed, failureReason, revocationIndex } = req.body;
+    const { id, nonce, proofs, nullifier, zkProof, zkProofs, verificationFailed, failureReason, revocationIndex, proverTimeMs, proofSizeBytes: clientProofSize, e2eMs, proofType: clientProofType } = req.body;
 
     if (!nullifier) {
       return res.status(400).json({ error: "Nullifier is required." });
@@ -310,10 +310,18 @@ app.post("/verify", async (req, res) => {
       }
     });
 
+    // Calculate proof size from payload if not sent by client
+    const actualProofSize = clientProofSize || JSON.stringify(req.body).length;
+
     request.verifiedUsers.push({
       subjectId: proofs[0]?.subjectId || nullifier,
       timestamp: new Date().toISOString(),
-      revealedAttributes
+      revealedAttributes,
+      verifyTimeMs,
+      proverTimeMs: proverTimeMs || null,
+      proofSizeBytes: actualProofSize,
+      e2eMs: e2eMs || null,
+      proofType: clientProofType || 'BBS+'
     });
 
     // ✅ Only store nullifier AFTER successful verification (allows retry on failure)
