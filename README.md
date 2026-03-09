@@ -33,8 +33,8 @@ The system is divided into three main decentralized modules:
 
 #### Phase C: Frontend Proof Generation
 6. **Predicate Routing:** The Wallet identifies the required cryptographic function:  
-   - **BBS+:** Used for direct disclosure (`checkExistence`, `checkEquality`, `checkBoolean`).  
-   - **Groth16/Plonk:** Used for hidden-data math (`checkNumeric`, `checkDate`, etc.).  
+   - **BBS+:** Used for selective disclosure (`existence`, `reveal`).  
+   - **PLONK:** Used for zero-knowledge predicate proofs (`equality`, `numeric/range`, `date comparison`, `set membership`).  
 7. **Local Execution:** The Wallet generates the Zero-Knowledge Proof directly on the frontend, ensuring raw data never leaves the device.  
 8. **Nullifier Creation:** A unique nullifier is generated for this specific transaction to prevent replay attacks.  
 
@@ -71,7 +71,7 @@ The system is divided into three main decentralized modules:
 ![Scan QR](images/ScanQRCode.png)
 
 #### Phase C: Frontend Proof Generation
-- Justin->>Justin: Route to BBS+ or Groth16/Plonk
+- Justin->>Justin: Route to BBS+ or PLONK
 - Justin->>Justin: Generate ZK Proof locally
 - Justin->>Justin: Generate Nullifier
 
@@ -88,24 +88,20 @@ The system is divided into three main decentralized modules:
 ![Verified Users](images/ListOfVerifiedUsers.png)
     
 ### Predicate Mapping
-**Handled by BBS+ (Implemented):**
-- `checkExistence`: Proves the Issuer signed the attribute without revealing its value.  
-- `checkEquality`: Reveals a value so the Verifier can check if it matches what they asked for.  
-- `checkBoolean`: Reveals the true/false value for the Verifier to check.  
-**Handled by Groth16 & Plonk (In Progress):**
-- `checkNumeric`
-- `checkDate`
-- `checkCrossField`
-- `checkHash`
-- `checkSetMembership`
-- `extractLocation`
-- `checkString`  
+**Handled by BBS+ :**
+- `existence`: Proves the Issuer signed the attribute without revealing its value.  
+- `reveal`: Reveals the attribute value to the Verifier (selective disclosure).  
+**Handled by PLONK (zk-SNARK) :**
+- `equality`: Proves a categorical field matches the expected value without revealing it (e.g., gender, board).  
+- `numeric/range`: Proves a numeric value satisfies a threshold (e.g., age ≥ 18, marks ≥ 60).  
+- `date comparison`: Proves a date satisfies a comparison without revealing the actual date (e.g., expiry date is in the future).  
+- `set membership`: Proves a value belongs to an allowed set without revealing which one (e.g., nationality ∈ {India, USA}).  
 
 ### Tech Stack
 - **Frontend:** React  
 - **Backend:** Node.js, Express.js  
 - **Security & Environment:** CORS, dotenv  
-- **Cryptography:** BBS+ Signatures, Groth16, Plonk  
+- **Cryptography:** BBS+ Signatures, PLONK (zk-SNARK)  
 - **Repository:** `Babar-5566/zkp-project.git`
 
 ___
