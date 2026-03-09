@@ -11,7 +11,7 @@ cd backend/issuer
 npm init -y
 ```
 ```bash
-npm install @mattrglobal/bbs-signatures cors dotenv express uuid
+npm install @mattrglobal/bbs-signatures cors dotenv express uuid        OR         npm install i
 ```
 ```bash
 node server.js
@@ -24,7 +24,7 @@ cd backend/verifiers/barVerifier
 npm init -y
 ```
 ```bash
-npm install @mattrglobal/bbs-signatures cors dotenv express uuid
+npm install @mattrglobal/bbs-signatures cors dotenv express uuid        OR         npm install i
 ```
 ```bash
 node server.js
@@ -34,7 +34,7 @@ node server.js
 cd frontend
 ```
 ```bash
-npm install @mattrglobal/bbs-signatures axios buffer clsx framer-motion html5-qrcode lucide-react process qrcode.react tailwind-merge react react-dom
+npm install @mattrglobal/bbs-signatures axios buffer clsx framer-motion html5-qrcode lucide-react process qrcode.react tailwind-merge react react-dom        OR         npm install i
 ```
 ```bash
 npm install
@@ -46,50 +46,51 @@ npm run dev
 ## Schema for different certificates :-
 ```  bash
 - Aadhaar: [
-        "fullName", "dob", "gender", "address", "photoVerified",
-        "aadhaarLast4", "issuer",
+        "fullName", "aadhaarNumber", "dob", "gender", "address", "photoVerified",
+        "issuer",
     ],
 - PAN: [
-        "fullName", "guardianName", "dob", "panID",
+        "fullName", "panID", "guardianName", "dob",
         "issuer",
     ],
 - Passport: [
-        "fullName", "dob", "passportID", "nationality",
+        "fullName", "passportID", "nationality", "dob",
         "expiryDate", "issuer",
     ],
 - DrivingLicense: [
-        "fullName", "dob", "licenseID", "issueDate",
+        "fullName", "licenseID", "dob", "issueDate",
         "expiryDate", "issuer", 
     ],
 - BirthCertificate: [
         "fullName", "dob", "placeOfBirth", "fatherName",
-        "motherName", "issuer", "issuanceDate",
+        "motherName", "issuer",
     ],
-- "12thMarksheet": ["fullName", "dob", "school", "board", "marks", "rollNumber", "issuer",],
-- "12thAdmit": ["fullName", "dob", "school", "board", "rollNumber", "issuer"],
-- "10thMarksheet": ["fullName", "dob", "school", "board", "marks", "rollNumber", "issuer"],
-- "10thAdmit": ["fullName", "dob", "school", "board", "rollNumber", "issuer",]
+- "12thMarksheet": ["fullName", "board", "rollNumber", "marks", "school", "dob", "issuer"],
+- "12thAdmit": ["fullName", "board", "rollNumber", "school", "dob", "issuer"],
+- "10thMarksheet": ["fullName", "board", "rollNumber", "marks", "school", "dob", "issuer"],
+- "10thAdmit": ["fullName", "board", "rollNumber", "school", "dob", "issuer"],
+- UniversityDegree: ["fullName", "university", "rollNumber", "passingYear", "issuer"]
 ```
 ---
 ## Types of predicate :-
 ```bash
-fullName	existence, reveal, hash
-aadhaarNumber	existence, reveal, hash
+fullName	existence, reveal
+aadhaarNumber	existence, reveal
 dob	existence, reveal, date comparison, numeric/range
-gender	existence, reveal, equality
-address	existence, reveal, hash
-photoVerified	existence, reveal, equality
-panID	existence, reveal, hash
-guardianName	existence, reveal, hash
-passportID	existence, reveal, hash
-nationality	existence, reveal, equality
+gender	existence, reveal, equality, set membership
+address	existence, reveal
+photoVerified	existence, reveal, equality, set membership
+panID	existence, reveal
+guardianName	existence, reveal
+passportID	existence, reveal
+nationality	existence, reveal, equality, set membership
 expiryDate	existence, reveal, date comparison
-licenseID	existence, reveal, hash
+licenseID	existence, reveal
 issueDate	existence, reveal, date comparison
 placeOfBirth	existence, reveal
-fatherName / motherName	existence, reveal, hash
-board	existence, reveal, equality
-rollNumber	existence, reveal, hash
+fatherName / motherName	existence, reveal
+board	existence, reveal, equality, set membership
+rollNumber	existence, reveal
 school	existence, reveal
 marks	existence, reveal, numeric/range
 university	existence, reveal
@@ -98,28 +99,23 @@ passingYear	existence, reveal, numeric/range
 
 # Predicate Behavior Details
 
-This document describes how different predicates are handled across **BBS+ proofs** and **Groth16 circuits**.
+This document describes how different predicates are handled across **BBS+ proofs** and **PLONK circuits**.
 
 ---
 
-# 1. `existence` — BBS+ (Fix)
+# 1. `existence` — BBS+
 
 ## Behavior
 - Do **NOT** add the attribute index to `revealIndices` in `bbsProver.js`.
 - A **BBS+ proof already proves that all signed messages exist** without revealing them.
 
-## Current Issue
-The current implementation **incorrectly reveals the attribute value**.
-
-## Fix
+## Implementation
 Skip adding the attribute index for the `existence` predicate.
 
 ```js
-// Incorrect
-revealIndices.push(attributeIndex);
-
-// Correct
 // Do nothing for existence predicate
+// BBS+ proof inherently proves all signed messages exist
+// without needing to reveal them
 ```
 
 ## Result
@@ -128,7 +124,7 @@ revealIndices.push(attributeIndex);
 
 ---
 
-# 2. `reveal` — BBS+ (New)
+# 2. `reveal` — BBS+
 
 ## Behavior
 - Add the attribute index to `revealIndices`.
@@ -165,7 +161,7 @@ predicates: ["existence", "reveal"]
 
 ---
 
-# 3. `equality` — Groth16 (New Circuit)
+# 3. `equality` — PLONK Circuit
 
 ## Supported Fields
 
@@ -178,23 +174,23 @@ Categorical fields:
 
 ## Encoding Strategy
 
-Strings are converted to integers.
+Strings are converted to integers using encoding tables in `plonkProver.js`.
 
-Example:
-
-| Value | Encoded |
-|------|------|
-| Male | 1 |
-| Female | 2 |
-| CBSE | 1 |
-| ICSE | 2 |
-
-Boolean encoding:
-
-| Value | Encoded |
-|------|------|
-| Yes | 1 |
-| No | 0 |
+```bash
+EQUALITY_ENCODINGS = {
+    gender: { "Male": 1, "Female": 2, "Other": 3 },
+    photoVerified: { "Yes": 1, "No": 0 },
+    nationality: { "India": 1, "USA": 2, "UK": 3, "Canada": 4, "Australia": 5 },
+    board: {
+        "WBBSE (West Bengal Board of Secondary Education)": 1,
+        "WBCHSE (West Bengal Council of Higher Secondary Education)": 2,
+        "CBSE (Central Board of Secondary Education)": 3,
+        "ICSE (Council for the Indian School Certificate Examinations)": 4,
+        "ISC (Indian School Certificate)": 5,
+        "NIOS (National Institute of Open Schooling)": 6
+    }
+}
+```
 
 ## Circuit Logic
 
@@ -204,11 +200,7 @@ Constraint enforced:
 value == expected
 ```
 
-Circuit output:
-
-```
-isEqual = 1
-```
+Circuit: `equality_check.circom`
 
 ## Result
 - Verifier confirms equality.
@@ -216,11 +208,11 @@ isEqual = 1
 
 ---
 
-# 4. `numeric / range` — Groth16 (Extend)
+# 4. `numeric / range` — PLONK Circuit
 
 ## 4.1 `dob → age`
 
-Already implemented.
+Circuit: `age_check.circom`
 
 Constraint:
 
@@ -228,15 +220,13 @@ Constraint:
 age ≥ threshold
 ```
 
+Age is computed from DOB (DD/MM/YYYY) on the client side before proving.
+
 ---
 
 ## 4.2 `marks`
 
-New circuit:
-
-```
-range_check.circom
-```
+Circuit: `range_check.circom`
 
 Constraint:
 
@@ -253,11 +243,7 @@ Implementation:
 
 ## 4.3 `passingYear`
 
-New circuit:
-
-```
-year_check.circom
-```
+Circuit: `year_check.circom`
 
 Constraint:
 
@@ -273,23 +259,28 @@ LessEqThan(16)
 
 ---
 
-# 5. `date comparison` — Groth16 (New Circuit)
+# 5. `date comparison` — PLONK Circuit
 
 ## Step 1: Convert Date → Integer
 
-Convert dates into **epoch-days**.
+Convert dates into **epoch-days** using UTC to avoid timezone issues.
 
 ```js
-Math.floor(new Date(date).getTime() / 86400000)
+const utcMs = Date.UTC(year, month - 1, day);
+Math.floor(utcMs / 86400000);
 ```
 
 ## Circuit Logic
+
+Circuit: `date_check.circom`
 
 Constraint:
 
 ```
 dateValue > dateThreshold
 ```
+
+Uses `epochThreshold - 1` internally to achieve `>=` semantics (same-day passes).
 
 ## Implementation
 
@@ -302,56 +293,33 @@ dateValue > dateThreshold
 
 ---
 
-# 6. `hash` — Groth16 (New Circuit)
+# 6. `set membership` — PLONK Circuit
 
-## Hash Function
-
-Uses **Poseidon Hash**.
-
-Why Poseidon?
-
-| Hash | Constraints |
-|-----|-----|
-| Poseidon | ~250 |
-| SHA-256 | ~28,000 |
-
-Poseidon is **much cheaper for ZK circuits**.
-
----
+## Behavior
+- Proves a value belongs to an allowed set without revealing which value it is.
+- Set holds up to **8** values (padded with 0).
 
 ## Circuit Logic
 
-```
-Poseidon(preimage) == expectedHash
-```
-
----
-
-## Use Case
-
-Verifier computes:
+Circuit: `set_membership.circom`
 
 ```
-Poseidon("Alex")
+value ∈ {set[0], set[1], ..., set[7]}
 ```
 
-Holder proves:
-
-- They know a value
-- That produces the same hash
-
-Without revealing the value.
-
----
+## Encoding
+Uses the same `EQUALITY_ENCODINGS` table as equality predicate.
 
 ## Supported Fields
 
-- `fullName`
-- `aadhaarNumber`
-- `panID`
-- `passportID`
-- `licenseID`
-- `rollNumber`
+- `gender`
+- `nationality`
+- `photoVerified`
+- `board`
+
+## Result
+- Verifier confirms value is in the allowed set.
+- Actual value remains hidden.
 
 ---
 
@@ -361,101 +329,19 @@ Without revealing the value.
 |---|---|---|
 | existence | BBS+ | Prove attribute exists |
 | reveal | BBS+ | Reveal attribute value |
-| equality | Groth16 | Check categorical equality |
-| numeric/range | Groth16 | Check numeric thresholds |
-| date comparison | Groth16 | Compare dates |
-| hash | Groth16 | Prove string equality privately |
+| equality | PLONK | Check categorical equality |
+| numeric/range | PLONK | Check numeric thresholds |
+| date comparison | PLONK | Compare dates |
+| set membership | PLONK | Prove value is in allowed set |
 
-
-Older One (Needs Removal) :-
-```bash
-
-  "Aadhaar": {
-    "fullName": ["existence", "equality", "cross-field"],
-    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
-    "gender": ["existence", "equality", "set membership"],
-    "address": ["existence", "string match"],
-    "photoVerified": ["existence", "boolean"],
-    "aadhaarLast4": ["existence", "equality"],
-    "issuer": ["existence", "equality"]
-  },
-  "PAN": {
-    "fullName": ["existence", "equality", "cross-field"],
-    "guardianName": ["existence", "equality"],
-    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
-    "panID": ["existence", "equality"],
-    "issuer": ["existence", "equality"]
-  },
-  "Passport": {
-    "fullName": ["existence", "equality", "cross-field"],
-    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
-    "passportID": ["existence", "equality"],
-    "nationality": ["existence", "equality", "set membership"],
-    "expiryDate": ["existence", "date comparison"],
-    "issuer": ["existence", "equality"]
-  },
-  "DrivingLicense": {
-    "fullName": ["existence", "equality", "cross-field"],
-    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
-    "licenseID": ["existence", "equality"],
-    "issueDate": ["existence", "date comparison"],
-    "expiryDate": ["existence", "date comparison"],
-    "issuer": ["existence", "equality"]
-  },
-  "BirthCertificate": {
-    "fullName": ["existence", "equality", "cross-field"],
-    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
-    "placeOfBirth": ["existence", "equality", "string match"],
-    "fatherName": ["existence", "equality"],
-    "motherName": ["existence", "equality"],
-    "issuer": ["existence", "equality"]
-  },
-  "12thMarksheet": {
-    "fullName": ["existence", "equality", "cross-field"],
-    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
-    "school": ["existence", "equality", "string match"],
-    "board": ["existence", "equality", "string match"],
-    "marks": ["existence", "numeric/range"],
-    "rollNumber": ["existence", "equality"],
-    "issuer": ["existence", "equality"]
-  },
-  "12thAdmit": {
-    "fullName": ["existence", "equality", "cross-field"],
-    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
-    "school": ["existence", "equality", "string match"],
-    "board": ["existence", "equality", "string match"],
-    "rollNumber": ["existence", "equality"],
-    "issuer": ["existence", "equality"]
-  },
-  "10thMarksheet": {
-    "fullName": ["existence", "equality", "cross-field"],
-    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
-    "school": ["existence", "equality", "string match"],
-    "board": ["existence", "equality", "string match"],
-    "marks": ["existence", "numeric/range"],
-    "rollNumber": ["existence", "equality"],
-    "issuer": ["existence", "equality"]
-  },
-  "10thAdmit": {
-    "fullName": ["existence", "equality", "cross-field"],
-    "dob": ["existence", "numeric/range", "date comparison", "cross-field"],
-    "school": ["existence", "equality", "string match"],
-    "board": ["existence", "equality", "string match"],
-    "rollNumber": ["existence", "equality"],
-    "issuer": ["existence", "equality"]
-  }
-
-```
-
-## Predicate → Recommended Proof System
+## Predicate → Proof System Mapping
 ```bash
 Existence → BBS+ only
-Equality → zk-SNARK or BBS+
-Cross-field → zk-SNARK
-Range → zk-SNARK only
-String match → BBS+ preferred
-Hash → BBS+ preferred
-Selective disclosure → BBS+ only
+Reveal → BBS+ only
+Equality → PLONK (zk-SNARK)
+Numeric/Range → PLONK (zk-SNARK)
+Date Comparison → PLONK (zk-SNARK)
+Set Membership → PLONK (zk-SNARK)
 ```
 ---
 ## REQUEST SCHEMAS
