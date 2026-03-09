@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "id": "3b5d7f818c2df177c5879341b239118d",
+  "type": "BbsProofRequest",
+  "credential_type": "identity_credential",
+  "issuer_pubkey": "qljIvNTV+gBPUYguOqExJf/zkTfz6OdEblzobQkAE/cuwy3WgHhHQf8GiWqaeXH/BqlVQ7ImadUvv9m1BlmSac+gIJSb8VLHWSSGADmXcatWDZTiaY0vSeZKN4mPJtWg",
+  "scope_id": "localhost_verifier",
+  "nonce": "edd76279d8b46dc5a660dced6039b57c",
+  "context": "Default",
+  "requested_attributes": [
+    {
+      "name": "fullName",
+      "predicate": "reveal"
+    }
+  ],
+  "requested_predicates": [
+    {
+      "name": "aadhaarNumber",
+      "predicate": "existence"
+    },
+    {
+      "name": "dob",
+      "predicate": "numeric/range",
+      "value": "16"
+    },
+    {
+      "name": "gender",
+      "predicate": "set membership",
+      "value": "Male"
+    }
+  ],
+  "zk": {
+    "circuit_id": "age_check_v1",
+    "verification_key_id": "vk_01"
+  },
+  "request_uri": "http://localhost:3001/request?id=3b5d7f818c2df177c5879341b239118d",
+  "response_uri": "http://localhost:3001/verify",
+  "expires_at": "2026-03-08T14:44:15.241Z",
+  "status": "verified",
+  "verifiedUsers": [
+    {
+      "subjectId": "5c6e1acc0dbeb083f9345e336120e3f230ec68c0f2447a9c44d26292eda09362",
+      "timestamp": "2026-03-08T14:40:53.555Z",
+      "revealedAttributes": {
+        "fullName": "kary M"
+      },
+      "verifyTimeMs": 222,
+      "proverTimeMs": 352,
+      "proofSizeBytes": 8267,
+      "e2eMs": 904,
+      "proofType": "BBS+ + zk-SNARK (PLONK × 2)"
+    }
+  ],
+  "failedUsers": []
+}
