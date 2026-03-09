@@ -1,0 +1,48 @@
+{
+  "version": "1.0",
+  "id": "6db92aa3e28bf96d3716866eea9385c6",
+  "type": "BbsProofRequest",
+  "credential_type": "identity_credential",
+  "issuer_pubkey": "uGuOhiTOqAldiK6vloayA2v4+uyqMzoQeTw1wMK0UA+Yckz9CrAmjAt8DUJq0fHRAc6l/rlAKdXp/agFfIgDIwVS1NJSr3WUh35eIMJ0z8c0+3b5fhCuZr1MFZ+ysgW3",
+  "scope_id": "localhost_verifier",
+  "nonce": "f459997c6d8aa99411d53744312029ae",
+  "context": "Default",
+  "requested_attributes": [],
+  "requested_predicates": [
+    {
+      "name": "fullName",
+      "predicate": "existence"
+    }
+  ],
+  "zk": {
+    "circuit_id": "age_check_v1",
+    "verification_key_id": "vk_01"
+  },
+  "request_uri": "http://localhost:3001/request?id=6db92aa3e28bf96d3716866eea9385c6",
+  "response_uri": "http://localhost:3001/verify",
+  "expires_at": "2026-03-08T17:22:19.082Z",
+  "status": "verified",
+  "verifiedUsers": [
+    {
+      "subjectId": "94d8839806341787dbc77396d4c9ce2d4d77bb36c0e06ea166dca6783eafea4b",
+      "timestamp": "2026-03-08T17:17:35.092Z",
+      "revealedAttributes": {},
+      "verifyTimeMs": 275,
+      "proverTimeMs": 99,
+      "proofSizeBytes": 946,
+      "e2eMs": 100,
+      "proofType": "BBS+ Only"
+    },
+    {
+      "subjectId": "53488f14d10defa9b2b105d92e7c7f9cd58eab19d529c1a7e912ece7c4f06593",
+      "timestamp": "2026-03-08T17:19:10.331Z",
+      "revealedAttributes": {},
+      "verifyTimeMs": 48,
+      "proverTimeMs": 76,
+      "proofSizeBytes": 946,
+      "e2eMs": 77,
+      "proofType": "BBS+ Only"
+    }
+  ],
+  "failedUsers": []
+}
