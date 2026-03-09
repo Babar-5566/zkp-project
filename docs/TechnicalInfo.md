@@ -11,7 +11,7 @@ cd backend/issuer
 npm init -y
 ```
 ```bash
-npm install @mattrglobal/bbs-signatures cors dotenv express uuid
+npm install @mattrglobal/bbs-signatures cors dotenv express uuid        OR         npm install i
 ```
 ```bash
 node server.js
@@ -24,7 +24,7 @@ cd backend/verifiers/barVerifier
 npm init -y
 ```
 ```bash
-npm install @mattrglobal/bbs-signatures cors dotenv express uuid
+npm install @mattrglobal/bbs-signatures cors dotenv express uuid        OR         npm install i
 ```
 ```bash
 node server.js
@@ -34,7 +34,7 @@ node server.js
 cd frontend
 ```
 ```bash
-npm install @mattrglobal/bbs-signatures axios buffer clsx framer-motion html5-qrcode lucide-react process qrcode.react tailwind-merge react react-dom
+npm install @mattrglobal/bbs-signatures axios buffer clsx framer-motion html5-qrcode lucide-react process qrcode.react tailwind-merge react react-dom        OR         npm install i
 ```
 ```bash
 npm install
