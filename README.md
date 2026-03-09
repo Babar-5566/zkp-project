@@ -84,6 +84,7 @@ The system is divided into three main decentralized modules:
 ![Proof Sent to verifier](images/ProofGenerated.png)
 - Bar Security->>Bar Security: Validate Proof & Check Nullifier
 - Bar Security-->>Justin: Grant/Deny Access Result
+
 ![Verified Users](images/ListOfVerifiedUsers.png)
 ![Verified Users](images/ListOfVerifiedUsers1.png)
     
