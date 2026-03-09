@@ -162,41 +162,28 @@ Verifier learns:
 
 ## 6. Cryptographic Primitives Used
 
-Your project can mention:
-
 ### 1. Digital Signatures
 
-Used for credential authenticity.
+Used for credential authenticity and selective disclosure.
 
-Example:
-
-- RSA
-- ECDSA
-- EdDSA
-- BBS+ (if using advanced selective disclosure)
+- BBS+ Signatures (for signing credentials and generating selective disclosure proofs)
 
 ---
 
 ### 2. Hash Function
 
-Used to ensure data integrity.
+Used to ensure data integrity and for ZK circuit proofs.
 
-Example:
-
-- SHA-256
+- Poseidon Hash (used inside PLONK circuits, ~250 constraints vs ~28,000 for SHA-256)
 
 ---
 
 ### 3. Zero-Knowledge Proof System
 
-Used to prove possession of credential without revealing full data.
+Used to prove possession of credential attributes without revealing full data.
 
-Example:
-
-- Schnorr protocol
-- zk-SNARK
-- BBS+ selective disclosure
-- Custom proof construction
+- PLONK (zk-SNARK) — used for equality, numeric/range, date comparison, and set membership proofs
+- BBS+ selective disclosure — used for existence and reveal predicates
 
 ---
 
